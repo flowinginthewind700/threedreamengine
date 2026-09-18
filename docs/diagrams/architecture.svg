@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="848" viewBox="0 0 1440 848">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    .title { fill: #e9e6e0; font-size: 20px; font-weight: 650; }
+    .sub { fill: #9aa1ac; font-size: 12.5px; }
+    .band { fill: #1b1e24; stroke: #2b3038; }
+    .h { fill: #e9e6e0; font-size: 13.5px; font-weight: 650; }
+    .d { fill: #9aa1ac; font-size: 12.5px; }
+    .tag { fill: #6d7480; font-size: 11px; }
+    .foot { fill: #6d7480; font-size: 12px; }
+    .conn { stroke: #2b3038; stroke-width: 1.5; fill: none; }
+  </style>
+
+  <rect width="1440" height="848" fill="#0e1013"/>
+
+  <text class="title" x="48" y="44">ThreeDream</text>
+  <text class="sub" x="48" y="68">one deterministic simulation core, trained headless in Node, rendered by three.js, played in a browser</text>
+
+  <rect class="band" x="48" y="92" width="1344" height="60" rx="8"/>
+  <rect x="52" y="102" width="3" height="40" rx="1.5" fill="#dd8f3c"/>
+  <text class="h" x="80" y="118">APPLICATION</text>
+  <text class="d" x="80" y="140">seven live pages, the Unreal level runtime, a first-person match, training in the page</text>
+  <text class="tag mono" x="1368" y="118" text-anchor="end">demo/</text>
+
+  <rect class="band" x="48" y="166" width="1344" height="84" rx="8"/>
+  <rect x="52" y="176" width="3" height="64" rx="1.5" fill="#4fb3a5"/>
+  <text class="h" x="80" y="194">INTELLIGENCE</text>
+  <text class="d" x="80" y="218">policy gradient with GAE, learned critic, MLP, Gaussian policy, replay, inference</text>
+  <text class="d" x="80" y="238">tasks DriveEnv / ReachEnv / PursuitEnv: gymnasium-style reset, step, observe over typed fixed-size buffers</text>
+  <text class="tag mono" x="1368" y="194" text-anchor="end">src/ai + src/envs</text>
+
+  <rect class="band" x="48" y="264" width="1344" height="84" rx="8" stroke="#3a424d"/>
+  <rect x="52" y="274" width="3" height="64" rx="1.5" fill="#e9e6e0"/>
+  <text class="h" x="80" y="292">SIMULATION CORE</text>
+  <text class="d" x="80" y="316">archetype ECS in chunked storage, fixed-timestep runner, seeded RNG, events, stable digest</text>
+  <text class="d" x="80" y="336">deterministic: engine.step(n) in Node and engine.frame(dt) in a browser run the same simulation</text>
+  <text class="tag mono" x="1368" y="292" text-anchor="end">src/core</text>
+
+  <rect class="band" x="48" y="362" width="652" height="104" rx="8"/>
+  <rect x="52" y="372" width="3" height="84" rx="1.5" fill="#d9705f"/>
+  <text class="h" x="80" y="390">PHYSICS</text>
+  <text class="d" x="80" y="414">builtin: pure TypeScript, the reference solver</text>
+  <text class="d" x="80" y="434">Rust to wasm: bit-identical, 2.6x to 4.9x faster</text>
+  <text class="d" x="80" y="454">Rapier: a cross-check against a solver nobody here owns</text>
+  <text class="tag mono" x="676" y="390" text-anchor="end">src/physics + rust/</text>
+
+  <rect class="band" x="716" y="362" width="676" height="104" rx="8"/>
+  <rect x="720" y="372" width="3" height="84" rx="1.5" fill="#4fb3a5"/>
+  <text class="h" x="748" y="390">SCALE: WEBGPU COMPUTE</text>
+  <text class="d" x="748" y="414">100,000 particles, 20,000-node soft bodies, WGSL</text>
+  <text class="d" x="748" y="434">one refcounted GPUDevice shared with three.js</text>
+  <text class="d" x="748" y="454">output blitted into the renderer's buffer, no readback</text>
+  <text class="tag mono" x="1368" y="390" text-anchor="end">src/gpu</text>
+
+  <rect class="band" x="48" y="480" width="1344" height="84" rx="8"/>
+  <rect x="52" y="490" width="3" height="64" rx="1.5" fill="#dd8f3c"/>
+  <text class="h" x="80" y="508">ASSETS</text>
+  <text class="d" x="80" y="532">glTF reader and writer, Unreal .uasset packages, material graphs, PNG, RGBE radiance</text>
+  <text class="d" x="80" y="552">formats are read rather than converted offline, so content authored in Unreal or Blender runs here</text>
+  <text class="tag mono" x="1368" y="508" text-anchor="end">src/assets</text>
+
+  <rect class="band" x="48" y="578" width="1344" height="60" rx="8"/>
+  <rect x="52" y="588" width="3" height="40" rx="1.5" fill="#6d7480"/>
+  <text class="h" x="80" y="604">RENDER</text>
+  <text class="d" x="80" y="626">three.js, the only layer that imports it, so the barrel keeps a training run free of a renderer</text>
+  <text class="tag mono" x="1368" y="604" text-anchor="end">src/render</text>
+
+  <path class="conn" d="M374 638 L374 672"/>
+  <path class="conn" d="M1054 638 L1054 672"/>
+  <path d="M374 678 l-4.5 -7 h9 z" fill="#2b3038"/>
+  <path d="M1054 678 l-4.5 -7 h9 z" fill="#2b3038"/>
+
+  <rect class="band" x="48" y="680" width="652" height="72" rx="8" fill="#21252c"/>
+  <text class="h" x="80" y="708">IN THE BROWSER</text>
+  <text class="d" x="80" y="732">WebGPU, WebGL2, wasm: rendered, interactive, where a trained policy is deployed</text>
+
+  <rect class="band" x="716" y="680" width="676" height="72" rx="8" fill="#21252c"/>
+  <text class="h" x="748" y="708">IN NODE</text>
+  <text class="d" x="748" y="732">no browser and no GPU: headless training, 2,404 unit tests, every CI gate</text>
+
+  <text class="foot" x="48" y="796">One rule underneath all of it: the simulation is the only source of truth.</text>
+  <text class="foot" x="48" y="818">The renderer mirrors physics state into three.js objects each frame and never writes back, so the same scene trains headless and plays rendered.</text>
+</svg>

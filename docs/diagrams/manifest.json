@@ -1,0 +1,26 @@
+{
+  "scale": 2,
+  "diagrams": {
+    "architecture.svg": {
+      "png": "architecture.png",
+      "width": 1440,
+      "height": 848,
+      "svgSha256": "99c708a992791fd799aec5162cef955b96fae90c9fcd6ad7b03c9d8de65006b0",
+      "pngSha256": "b9cb8f4fa0ca7b8bb4bb6c5e25c396d693c3ca90e61370917170273084882785"
+    },
+    "embodied-loop.svg": {
+      "png": "embodied-loop.png",
+      "width": 1440,
+      "height": 492,
+      "svgSha256": "3e3ead393907f318b62d91c86685e8b330d5811223c4ad8f16112dfb67dd272c",
+      "pngSha256": "0bf23f180532f0dc025ddbf8c7be1d34683e4aa4bc4f9348c564850a038190be"
+    },
+    "unreal-pipeline.svg": {
+      "png": "unreal-pipeline.png",
+      "width": 1440,
+      "height": 400,
+      "svgSha256": "fac895a78929a9176aa2269f9734bc041c4452e0e77d9fce8a51d6661dda7269",
+      "pngSha256": "62dd5543142a7b67b39f930393be338ce02eb6ca238b798b73fa134fbbb8b178"
+    }
+  }
+}

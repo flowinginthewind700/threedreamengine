@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="492" viewBox="0 0 1440 492">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    .title { fill: #e9e6e0; font-size: 20px; font-weight: 650; }
+    .sub { fill: #9aa1ac; font-size: 12.5px; }
+    .core { fill: #171a20; stroke: #3a424d; }
+    .box { fill: #1b1e24; stroke: #2b3038; }
+    .host { fill: #21252c; stroke: #2b3038; }
+    .h { fill: #e9e6e0; font-size: 12.5px; font-weight: 650; }
+    .hb { fill: #e9e6e0; font-size: 14px; font-weight: 650; }
+    .d { fill: #9aa1ac; font-size: 11.5px; }
+    .accent { fill: #4fb3a5; font-size: 12px; }
+    .copper { fill: #dd8f3c; font-size: 12px; }
+    .foot { fill: #6d7480; font-size: 12px; }
+    .flow { stroke: #4a515c; stroke-width: 1.5; fill: none; }
+  </style>
+
+  <rect width="1440" height="492" fill="#0e1013"/>
+
+  <text class="title" x="36" y="42">One loop, two hosts</text>
+  <text class="sub" x="36" y="66">where an embodied policy is trained, and where it runs</text>
+
+  <rect class="host" x="36" y="140" width="250" height="210" rx="8"/>
+  <rect x="40" y="150" width="3" height="190" rx="1.5" fill="#4fb3a5"/>
+  <text class="h" x="58" y="174">TRAINING HOST</text>
+  <text class="accent mono" x="58" y="198">Node</text>
+  <text class="d" x="58" y="230">no browser, no GPU</text>
+  <text class="d" x="58" y="254">thousands of episodes</text>
+  <text class="d mono" x="58" y="278">npm run train</text>
+  <text class="d" x="58" y="302">gated on a digest</text>
+  <text class="d" x="58" y="326">2,404 unit tests</text>
+
+  <rect class="core" x="326" y="100" width="788" height="300" rx="10"/>
+  <text class="hb" x="350" y="132">ONE DETERMINISTIC SIMULATION CORE</text>
+
+  <rect class="box" x="350" y="152" width="356" height="88" rx="8"/>
+  <rect x="354" y="162" width="3" height="68" rx="1.5" fill="#dd8f3c"/>
+  <text class="h" x="376" y="182">ENVIRONMENT</text>
+  <text class="d" x="376" y="206">reset, step, observe over the ECS world</text>
+  <text class="d" x="376" y="226">drive / reach / pursuit, or a level of your own</text>
+
+  <rect class="box" x="734" y="152" width="356" height="88" rx="8"/>
+  <rect x="738" y="162" width="3" height="68" rx="1.5" fill="#4fb3a5"/>
+  <text class="h" x="760" y="182">OBSERVATION</text>
+  <text class="d" x="760" y="206">typed fixed-size buffers, no allocation in the loop</text>
+  <text class="d" x="760" y="226">normalised by arena scale so a policy transfers</text>
+
+  <rect class="box" x="734" y="290" width="356" height="88" rx="8"/>
+  <rect x="738" y="300" width="3" height="68" rx="1.5" fill="#4fb3a5"/>
+  <text class="h" x="760" y="320">POLICY</text>
+  <text class="d" x="760" y="344">MLP, Gaussian, policy gradient with GAE</text>
+  <text class="d" x="760" y="364">trained headless, or live in the page</text>
+
+  <rect class="box" x="350" y="290" width="356" height="88" rx="8"/>
+  <rect x="354" y="300" width="3" height="68" rx="1.5" fill="#d9705f"/>
+  <text class="h" x="376" y="320">PHYSICS STEP</text>
+  <text class="d" x="376" y="344">fixed dt, seeded RNG, pluggable backend</text>
+  <text class="d" x="376" y="364">builtin / Rust-wasm / Rapier</text>
+
+  <path class="flow" d="M706 196 L724 196"/>
+  <path d="M730 196 l-7 -4.5 v9 z" fill="#4a515c"/>
+  <path class="flow" d="M912 240 L912 280"/>
+  <path d="M912 286 l-4.5 -7 h9 z" fill="#4a515c"/>
+  <path class="flow" d="M734 334 L716 334"/>
+  <path d="M710 334 l7 -4.5 v9 z" fill="#4a515c"/>
+  <path class="flow" d="M528 290 L528 250"/>
+  <path d="M528 244 l4.5 7 h-9 z" fill="#4a515c"/>
+
+  <rect class="host" x="1154" y="140" width="250" height="210" rx="8"/>
+  <rect x="1158" y="150" width="3" height="190" rx="1.5" fill="#dd8f3c"/>
+  <text class="h" x="1176" y="174">DEPLOYMENT HOST</text>
+  <text class="copper mono" x="1176" y="198">Browser</text>
+  <text class="d" x="1176" y="230">WebGPU or WebGL2 render</text>
+  <text class="d" x="1176" y="254">the same policy file</text>
+  <text class="d" x="1176" y="278">the same observation vector</text>
+  <text class="d" x="1176" y="302">the same fixed timestep</text>
+  <text class="d" x="1176" y="326">interactive, at 60 fps</text>
+
+  <path class="flow" d="M290 245 L318 245"/>
+  <path d="M324 245 l-7 -4.5 v9 z" fill="#4a515c"/>
+  <path class="flow" d="M318 265 L290 265"/>
+  <path d="M286 265 l7 -4.5 v9 z" fill="#4a515c"/>
+  <path class="flow" d="M1122 245 L1150 245"/>
+  <path d="M1154 245 l-7 -4.5 v9 z" fill="#4a515c"/>
+  <path class="flow" d="M1150 265 L1122 265"/>
+  <path d="M1118 265 l7 -4.5 v9 z" fill="#4a515c"/>
+
+  <text class="foot" x="36" y="446" fill="#9aa1ac">A policy trained against simulated physics in Node plays, unchanged, in a browser frame.</text>
+  <text class="foot" x="36" y="470">Same core, same timestep, same digest on both sides: embodied behaviour is trained where it is cheap and deployed where it is seen.</text>
+</svg>
