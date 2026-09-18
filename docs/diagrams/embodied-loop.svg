@@ -29,7 +29,7 @@
   <text class="d" x="58" y="254">thousands of episodes</text>
   <text class="d mono" x="58" y="278">npm run train</text>
   <text class="d" x="58" y="302">gated on a digest</text>
-  <text class="d" x="58" y="326">2,404 unit tests</text>
+  <text class="d" x="58" y="326">2,616 unit tests</text>
 
   <rect class="core" x="326" y="100" width="788" height="300" rx="10"/>
   <text class="hb" x="350" y="132">ONE DETERMINISTIC SIMULATION CORE</text>

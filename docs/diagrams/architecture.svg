@@ -77,7 +77,7 @@
 
   <rect class="band" x="716" y="680" width="676" height="72" rx="8" fill="#21252c"/>
   <text class="h" x="748" y="708">IN NODE</text>
-  <text class="d" x="748" y="732">no browser and no GPU: headless training, 2,404 unit tests, every CI gate</text>
+  <text class="d" x="748" y="732">no browser and no GPU: headless training, 2,616 unit tests, every gate</text>
 
   <text class="foot" x="48" y="796">One rule underneath all of it: the simulation is the only source of truth.</text>
   <text class="foot" x="48" y="818">The renderer mirrors physics state into three.js objects each frame and never writes back, so the same scene trains headless and plays rendered.</text>

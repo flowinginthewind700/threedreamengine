@@ -19,7 +19,7 @@ names a file, that file is the specification it describes.
 2. **Everything that matters is deterministic.** A seeded RNG, a fixed timestep,
    and no hidden global state mean `engine.step(n)` in Node and `engine.frame(dt)`
    in a browser produce the same simulation. That is what makes a physics-AI
-   kernel testable: all 2430 unit tests run without a GPU, and the wasm backend is
+   kernel testable: all 2616 unit tests run without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
    `deterministic` is false on both backends, because atomics promise no order, so
@@ -29,7 +29,7 @@ names a file, that file is the specification it describes.
    于是同一个场景既能无头训练，也能在浏览器里渲染游玩，结果完全一致。
 2. **关键路径都是确定性的。** 带种子的 RNG、固定步长、没有隐藏的全局状态，所以 Node
    里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。这让一个
-   物理-AI 内核变得可测：2430 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
+   物理-AI 内核变得可测：2616 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
    TS 求解器的每一个比特。两个 GPU 层用同样的方式对齐一份 CPU 参照，而且都不替自己
    声称确定性：两个后端的 `deterministic` 都是 false，因为原子操作不承诺顺序，所以
    训练与回放永远走参照档。
@@ -328,23 +328,24 @@ changes. `src/envs/drive.ts` is the shortest useful example.
 在这样的世界上实现 `LearningEnvironment`，trainer 无需任何改动就能学它。
 `src/envs/drive.ts` 是最短且有用的示例。
 
-## Testing and CI
+## Testing and the gate
 
 The project is developed test-first: a spec exists for every module under `src/`,
 and `tests/tdd.test.ts` fails the build the moment a new module lands without one.
 
 | Command | What it runs | Cost |
 |---|---|---|
-| `npm test` | 2430 unit tests in 85 files, headless, no GPU needed | ~25s |
-| `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~21s |
-| `npm run test:e2e` | 59 Playwright tests over 8 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~50s |
+| `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
+| `npm test` | 2616 unit tests in 93 files, headless, no GPU needed | ~28s |
+| `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
+| `npm run test:e2e` | 65 Playwright tests over 8 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
 | `npm run check:wasm` | assertions over the shipped wasm kernel: ABI, provenance, behaviour | ~1s |
 | `node scripts/bench_gpu_particles.mjs` | the M3 ladder at 1k/10k/50k/100k particles, 160 steps a rung: per-step cost as p50/p95/mean over 20 chunk samples, draw calls, blit size | ~6s |
 | `node scripts/bench_gpu_soft.mjs` | the M4 ladder at 1k/5k/10k/20k nodes, 160 steps a rung: the same distribution, plus dispatches, colors and stretch | ~3s |
 | `npx tsx scripts/bench_cpu_soft.ts` | the same M4 ladder on the fallback tier: `softCpu.ts`, single-threaded, no GPU, p50/p95 a step at 1k-20k nodes and a fitted us/node | ~10s |
 | `npm run diagrams` / `npm run diagrams:check` | rasterise `docs/diagrams/*.svg` to the committed PNGs, or gate them against the manifest's hashes | ~5s / ~0s |
-| `node scripts/capture_shots.mjs` | the screenshots in the README and the share cards: 12 captures of the built pages served at the Pages subpath, each gated on the page's own tier report | ~40s |
+| `node scripts/capture_shots.mjs` | the screenshots in the README and the share cards: 12 captures of the built pages served at their deployment subpath, each gated on the page's own tier report | ~40s |
 
 The two e2e projects exist because the pages need two different GPUs. `demo`,
 `physics-check`, `particles` and `soft` only need *a* GL context, and headless
@@ -373,12 +374,31 @@ decoration, while one set at it makes every refactor a fight.
 
 `.github/workflows/ci.yml` is one file with five jobs: `verify` (typecheck +
 tests + diagram gate + build), `coverage`, `e2e` and `rust` run in parallel as
-gates, and `deploy` depends on all four. A separate `pages.yml` would deploy
-`main` when a gate is red, because Actions cannot express `needs:` across
+gates, and `deploy` depends on all four. A second workflow would hand out a
+shippable bundle from a red `main`, because Actions cannot express `needs:` across
 workflow files, so the dependency lives in one graph, and
 `tests/ci_workflow.test.ts` asserts it (along with the SHA-pinning of every
-action and the fact that gate jobs hold no publish permission). On a green push
-to `main`, `deploy` builds with the Pages base path and publishes `dist/`.
+action and the fact that no job holds a publish permission).
+
+Who runs that graph is a separate fact from what it checks, and both are worth
+stating. `npm run gate` runs the same commands in one serial, fail-fast order,
+and `tests/gate.test.ts` pins the workflow's list and the gate's to each other in
+both directions, so a check added to one and forgotten in the other fails the
+unit suite. What a runner installs and a working copy already has (`npm ci`, the
+pinned Rust toolchain, Playwright's Chromium) is a precondition that prints its
+own fix, and two steps write into `.gate-tmp/` rather than the tree: the diagram
+render, because re-rasterising over `docs/diagrams/` would replace committed PNGs
+with this machine's fonts, and the wasm snapshot, because the rebuild that
+follows overwrites `wasm/pkg`. A full run is about four minutes with warm
+caches, and the wasm rebuild has to come back byte-identical to the committed
+artifact.
+
+Shipping is then a hand's work rather than a job's: after a green gate,
+`npm run build:inpage -- --host <checkout>` writes the bundle into the host
+site's static tree under `/threedream/app/`, and `scripts/publish_assets.ts`
+puts the bulk bytes on the asset mirror. Nothing publishes itself from a push;
+`deploy` still states the contract for whoever has a runner to give it -- build
+the bundle into a scratch host, upload it, and only behind all four gates.
 
 The `rust` gate exists because the wasm kernel ships as bytes in the repository,
 and no other job can tell whether those bytes still match `rust/`: TypeScript
@@ -413,10 +433,23 @@ printed instead of turning up as an unexplained hash mismatch.
 
 `.github/workflows/ci.yml` 是单文件五任务：`verify`（类型检查 + 测试 + 图关卡 +
 构建）、`coverage`、`e2e`、`rust` 四个关卡并行，`deploy` 依赖这四者。单独的
-`pages.yml` 会在关卡变红时仍然部署 `main`，因为 Actions 无法跨工作流文件表达
+第二个工作流会在关卡变红时仍然交出可发布产物，因为 Actions 无法跨工作流文件表达
 `needs:`，所以依赖关系收敛在一个图里，并由 `tests/ci_workflow.test.ts` 断言（连同
-每个 action 的 SHA 锁定、以及关卡任务不持有发布权限这一事实）。`main` 上一次绿色
-push 后，`deploy` 用 Pages base 路径构建并发布 `dist/`。
+每个 action 的 SHA 锁定、以及没有任何任务持有发布权限这一事实）。
+
+谁来跑这张图，与它检查什么是两件不同的事，而两件都值得说清楚。`npm run gate` 以串行、
+失败即停的顺序跑同一批命令，`tests/gate.test.ts` 把 workflow 的清单与 gate 的清单双向
+锁定：一处加了、另一处漏掉的那条检查会让单元测试失败。runner 需要安装、而工作副本本来
+就有的东西（`npm ci`、锁定的 Rust 工具链、Playwright 的 Chromium）是前置条件，报错信息
+里直接给出修复命令；有两步写进 `.gate-tmp/` 而不是仓库树：图的渲染（重新栅格化到
+`docs/diagrams/` 会用本机字体替换已提交的 PNG），以及 wasm 快照（紧随其后的重建会覆盖
+`wasm/pkg`）。缓存已热时跑完一遍约 4 分钟，而那次 wasm 重建必须与已提交产物逐字节一致。
+
+交付于是由人来做，而不是由 job 来做：关卡全绿之后，`npm run build:inpage -- --host
+<checkout>` 把产物写进 host 站点 `/threedream/app/` 下的静态目录，
+`scripts/publish_assets.ts` 把大块字节放上资产镜像。没有任何东西会因为一次 push 就自己
+发布；`deploy` 仍然为任何有 runner 可用的人保留同一份契约 —— 把产物构建进一个临时
+host、上传，且只在四道关卡之后。
 
 `rust` 关卡存在的原因：wasm 内核以字节形式随仓库交付，而没有别的任务能判断这些字节
 是否还与 `rust/` 一致 —— TypeScript 检查的是 `src/physics/wasm.ts` 与它自己声明的
@@ -628,7 +661,10 @@ src/assets/    glTF document/mesh/skin/animation/material, rgbe (HDR sky, sun
 src/render/    scene.ts particles.ts soft.ts assets.ts rig.ts
 rust/          physics (solver) / physics-wasm (ABI) / gpu (wgpu skeleton)
 wasm/pkg/      the shipped wasm kernel, rebuilt by `npm run build:wasm`
-scripts/       train_headless.ts check_wasm_artifact.mjs bench_*.mjs
+scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle the
+               host site serves) publish_assets.ts (the asset mirror)
+               publish_docs.ts (the public docs mirror) train_headless.ts
+               check_wasm_artifact.mjs bench_*.mjs ue_texture_encode.ts
                capture_shots.mjs render_diagrams.mjs ue_extract.ts ue_redirects.ts
                ue_redirects/ (the committed name tables, names not bytes)
                audit_unreal_reference.mjs clone_unreal_reference.sh
@@ -647,10 +683,11 @@ demo/          index (trainer), physics-check, shared-device, particles, soft,
                cc0/: the scene kit, with its manifest.json and LICENSE.md; the
                ue/shooter/ extract is ignored: it is bytes from a pack that
                ships no licence, reproducible by the two commands above)
-tests/         85 files, 2430 tests
+tests/         93 files, 2616 tests
 e2e/           demo, wasm physics, particles, soft (WebGL); shared device and
                the GPU halves of particles and soft (WebGPU)
-.github/       ci.yml: four gates (verify / coverage / e2e / rust) then Pages deploy
+.github/       ci.yml: four gates (verify / coverage / e2e / rust) then the bundle
+               build; `npm run gate` runs the same four on the machine at hand
 thirdparty/    UnrealEngine (submodule, opt-in), demo (LeaffyL's UE5.5 FPS Demo,
                the project the ue-fps page plays), FPS-Shooter-Unreal (the
                first-person template whose prototyping assets sit beside it),

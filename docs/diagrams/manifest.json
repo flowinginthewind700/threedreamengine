@@ -5,15 +5,15 @@
       "png": "architecture.png",
       "width": 1440,
       "height": 848,
-      "svgSha256": "99c708a992791fd799aec5162cef955b96fae90c9fcd6ad7b03c9d8de65006b0",
-      "pngSha256": "b9cb8f4fa0ca7b8bb4bb6c5e25c396d693c3ca90e61370917170273084882785"
+      "svgSha256": "fe498a4b17ad882ae41f905128d032d8ad2cb37c41fd74b4b829f4c948f0b9e7",
+      "pngSha256": "9a6b278edf845d8de2850ab8391a6d4de52611077dca1e7b3e825260a3beb81e"
     },
     "embodied-loop.svg": {
       "png": "embodied-loop.png",
       "width": 1440,
       "height": 492,
-      "svgSha256": "3e3ead393907f318b62d91c86685e8b330d5811223c4ad8f16112dfb67dd272c",
-      "pngSha256": "0bf23f180532f0dc025ddbf8c7be1d34683e4aa4bc4f9348c564850a038190be"
+      "svgSha256": "dc1d60b6b6b64f3d2429c5318a79a4fd60e8c0789a7ed2f06f5c7e7a3d087123",
+      "pngSha256": "57e09804fcf31fb82dec65d2427f84ba7cacfa59dd5fc9dc7c43762fc57c6ef8"
     },
     "unreal-pipeline.svg": {
       "png": "unreal-pipeline.png",

@@ -132,16 +132,21 @@ The long form — every layer, solver, gate and measurement — lives in
 
 ## Demos / 演示页
 
-Seven pages, deployed from `main` automatically once every gate in CI is green.
-Each one exists to measure a claim rather than to illustrate it: the numbers in
-the sidebars are read off the running engine.
+Seven pages, served in-site at
+[robotworld.top/threedream](https://robotworld.top/zh/threedream); the bundle
+they run is the one `npm run build:inpage` writes after `npm run gate` has passed
+every check. Each one exists to measure a claim rather than to illustrate it: the
+numbers in the sidebars are read off the running engine.
 
-一共七个页面，`main` 上所有 CI 关卡通过后自动部署。每个页面存在的理由都是把一条结论
-量出来，而不是画个示意：侧栏里的数字都是从正在运行的引擎里读出来的。
+一共七个页面，站内由
+[robotworld.top/threedream](https://robotworld.top/zh/threedream) 提供；它们跑的那份
+产物，是 `npm run gate` 把每一道关卡都跑绿之后由 `build:inpage` 写出来的。每个页面
+存在的理由都是把一条结论量出来，而不是画个示意：侧栏里的数字都是从正在运行的引擎里
+读出来的。
 
 | Page | Live | What it measures |
 |---|---|---|
-| Trainer | [threedream/](https://robotworld.top/threedream/app/) | A policy-gradient learner training in the page, on `DriveEnv` and `ReachEnv`. |
+| Trainer | [index](https://robotworld.top/threedream/app/) | A policy-gradient learner training in the page, on `DriveEnv` and `ReachEnv`. |
 | Physics check | [physics-check.html](https://robotworld.top/threedream/app/physics-check.html) | One canonical scene through `builtin`, `wasm` and a wasm replay, digests compared in your own browser. |
 | Shared device | [shared-device.html](https://robotworld.top/threedream/app/shared-device.html) | A single `GPUDevice` backing three.js rendering and a raw WGSL compute pipeline at the same time. |
 | Particles | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k-100k particles: the tier the browser granted, blit or CPU upload, draw calls, hash overflow. |
@@ -151,7 +156,7 @@ the sidebars are read off the running engine.
 
 | 页面 | 线上 | 量的是什么 |
 |---|---|---|
-| 训练页 | [threedream/](https://robotworld.top/threedream/app/) | 在页面里实时训练的策略梯度学习器，任务是 `DriveEnv` 与 `ReachEnv`。 |
+| 训练页 | [index](https://robotworld.top/threedream/app/) | 在页面里实时训练的策略梯度学习器，任务是 `DriveEnv` 与 `ReachEnv`。 |
 | 确定性检查 | [physics-check.html](https://robotworld.top/threedream/app/physics-check.html) | 同一个规范场景跑 `builtin`、`wasm` 与一次 wasm 回放，在你自己的浏览器里比对摘要。 |
 | 共享设备 | [shared-device.html](https://robotworld.top/threedream/app/shared-device.html) | 同一个 `GPUDevice` 同时支撑 three.js 渲染与一条裸 WGSL compute pipeline。 |
 | 粒子 | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k–100k 粒子：浏览器实际给了哪个档位、走 blit 还是 CPU 上传、draw call 数、哈希溢出数。 |
@@ -202,16 +207,16 @@ hitscan。*
 | 100,000 particles, one WebGPU step | 20-26 ms on an iGPU, median of 20 timed chunks |
 | 20,000-node soft body, one step | 3.9-6.3 ms, race-free by constraint coloring, no atomics |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 2,430 unit tests in 85 files, 59 browser tests, 68 Rust tests |
-| Live pages | seven, on GitHub Pages, deployed from a green `main` |
+| Tests | 2,616 unit tests in 93 files, 65 browser tests, 68 Rust tests |
+| Live pages | seven, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
 |---|---|
 | 10 万粒子，一个 WebGPU 步 | iGPU 上 20–26 ms，20 个计时 chunk 的中位数 |
 | 2 万节点软体，一个步 | 3.9–6.3 ms，靠约束着色无竞争，不用原子操作 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 85 个文件 2,430 个单元测试、59 个浏览器测试、68 个 Rust 测试 |
-| 线上页面 | 七个，GitHub Pages，`main` 绿了即部署 |
+| 测试 | 93 个文件 2,616 个单元测试、65 个浏览器测试、68 个 Rust 测试 |
+| 线上页面 | 七个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
 
@@ -219,14 +224,16 @@ hitscan。*
 npm install
 npm run dev       # the seven browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 2,430 unit tests, no GPU needed
-npm run verify    # typecheck + test + build
+npm test          # 2,616 unit tests, no GPU needed
+npm run gate      # every gate, in order, stopping at the first red one
+npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```
 
 Requires Node >= 22.12. Rust is only needed to rebuild the physics kernel from
 `rust/`; everything above runs without it.
 
-需要 Node >= 22.12。只有从 `rust/` 重建物理内核时才需要 Rust；以上命令都不需要。
+需要 Node >= 22.12。只有从 `rust/` 重建物理内核时才需要 Rust；除 `gate` 的 Rust 关卡
+之外，以上命令都不需要它。
 
 ## Roadmap / 路线图
 
