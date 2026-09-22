@@ -230,7 +230,7 @@ speed, the red cube in the jaw on its way to the basket.*
 | 100,000 particles, one WebGPU step | 20-26 ms on an iGPU, median of 20 timed chunks |
 | 20,000-node soft body, one step | 3.9-6.3 ms, race-free by constraint coloring, no atomics |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 3,540 unit tests in 119 files, 65 browser tests, 68 Rust tests |
+| Tests | 4,167 unit tests in 135 files, 67 browser tests, 68 Rust tests |
 | Live pages | eight, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
@@ -238,7 +238,7 @@ speed, the red cube in the jaw on its way to the basket.*
 | 10 万粒子，一个 WebGPU 步 | iGPU 上 20–26 ms，20 个计时 chunk 的中位数 |
 | 2 万节点软体，一个步 | 3.9–6.3 ms，靠约束着色无竞争，不用原子操作 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 119 个文件 3,540 个单元测试、65 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 135 个文件 4,167 个单元测试、67 个浏览器测试、68 个 Rust 测试 |
 | 线上页面 | 八个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
@@ -247,7 +247,7 @@ speed, the red cube in the jaw on its way to the basket.*
 npm install
 npm run dev       # the eight browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 3,540 unit tests, no GPU needed
+npm test          # 4,167 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
 npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```

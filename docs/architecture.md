@@ -19,7 +19,7 @@ names a file, that file is the specification it describes.
 2. **Everything that matters is deterministic.** A seeded RNG, a fixed timestep,
    and no hidden global state mean `engine.step(n)` in Node and `engine.frame(dt)`
    in a browser produce the same simulation. That is what makes a physics-AI
-   kernel testable: all 3441 unit tests run without a GPU, and the wasm backend is
+   kernel testable: all 4167 unit tests run without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
    `deterministic` is false on both backends, because atomics promise no order, so
@@ -29,7 +29,7 @@ names a file, that file is the specification it describes.
    于是同一个场景既能无头训练，也能在浏览器里渲染游玩，结果完全一致。
 2. **关键路径都是确定性的。** 带种子的 RNG、固定步长、没有隐藏的全局状态，所以 Node
    里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。这让一个
-   物理-AI 内核变得可测：3441 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
+   物理-AI 内核变得可测：4167 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
    TS 求解器的每一个比特。两个 GPU 层用同样的方式对齐一份 CPU 参照，而且都不替自己
    声称确定性：两个后端的 `deterministic` 都是 false，因为原子操作不承诺顺序，所以
    训练与回放永远走参照档。
@@ -42,7 +42,8 @@ physics  backend interface + four solvers         no three.js
 gpu      probe, shared device, scale layers       no three.js, no WASM
 ai       MLP, Gaussian policy, policy-gradient    no three.js, no WASM
 envs     learning tasks (drive, reach, pursuit)   physics only
-render   three.js bridge + particle/soft views    the only layer importing three
+render   three.js bridge + rigid/articulated/
+         particle/soft views                  the only layer importing three
 assets   glTF, RGBE, glb, ue/ package reader      no three.js, no WASM
 ```
 
@@ -608,9 +609,9 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 3441 unit tests in 118 files, headless, no GPU needed | ~21s |
+| `npm test` | 4167 unit tests in 135 files, headless, no GPU needed | ~25s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
-| `npm run test:e2e` | 65 Playwright tests over 8 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
+| `npm run test:e2e` | 67 Playwright tests over 9 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
 | `npm run check:wasm` | assertions over the shipped wasm kernel: ABI, provenance, behaviour | ~1s |
 | `node scripts/bench_gpu_particles.mjs` | the M3 ladder at 1k/10k/50k/100k particles, 160 steps a rung: per-step cost as p50/p95/mean over 20 chunk samples, draw calls, blit size | ~6s |
@@ -953,7 +954,9 @@ src/assets/    glTF document/mesh/skin/animation/material, rgbe (HDR sky, sun
                writer both), and ue/: the uasset package reader, property tags,
                Oodle bulk data, compressed buffers, mesh descriptions, textures,
                material graphs, sound waves and cues
-src/render/    scene.ts particles.ts soft.ts assets.ts rig.ts
+src/render/    scene.ts articulatedScene.ts (a machine drawn link by link
+               from the description a robot file compiled into) particles.ts
+               soft.ts assets.ts rig.ts
 rust/          physics (solver) / physics-wasm (ABI) / gpu (wgpu skeleton)
 wasm/pkg/      the shipped wasm kernel, rebuilt by `npm run build:wasm`
 scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle the
@@ -972,10 +975,13 @@ docs/          this file, feasibility study, development plan, free-assets.md
                and the PNGs the README shows, gated by render_diagrams.mjs),
                demo assets
 demo/          index (trainer), physics-check, shared-device, particles, soft,
-               fps, ue-fps: each a .html + .ts pair (fps adds fps/ for the match
+               fps, ue-fps, arm-lab: each a .html + .ts pair (fps adds fps/ for the match
                itself, ue-fps adds ue/ for the level, its weapons, its sound, and
                sceneKit.ts + kitview.ts: the CC0 layout planner that runs in
-               bare Node, and the view code that dresses the level with it), plus
+               bare Node, and the view code that dresses the level with it, and
+               arm-lab adds arm-lab/ for the workcell: the document it reads, the
+               expert that demonstrates on it, the episode both hosts fly, and
+               the recording that exports, trains and hands a policy back), plus
                pages.ts and nav.ts (the shared nav) and public/ (favicon, share
                cards, trained policies, ue/ assets the import tool wrote,
               models/arm-lab/: the robot kit, fetched by fetch_robots.ts with
@@ -984,9 +990,10 @@ demo/          index (trainer), physics-check, shared-device, particles, soft,
                ue/shooter/ extract ships except for pack/, which is ignored:
                bytes from a pack that ships no licence, reproducible by the two
                commands above and read from a mirror of their own)
-tests/         118 files, 3441 tests
-e2e/           demo, wasm physics, particles, soft (WebGL); shared device and
-               the GPU halves of particles and soft (WebGPU)
+tests/         135 files, 4167 tests
+e2e/           demo, wasm physics, particles, soft, the UE level's digest, the
+               arm lab (WebGL); shared device and the GPU halves of particles and
+               soft (WebGPU)
 .github/       ci.yml: four gates (verify / coverage / e2e / rust) then the bundle
                build; `npm run gate` runs the same four on the machine at hand
 thirdparty/    UnrealEngine (submodule, opt-in), demo (LeaffyL's UE5.5 FPS Demo,
