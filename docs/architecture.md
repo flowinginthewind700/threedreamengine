@@ -19,7 +19,7 @@ names a file, that file is the specification it describes.
 2. **Everything that matters is deterministic.** A seeded RNG, a fixed timestep,
    and no hidden global state mean `engine.step(n)` in Node and `engine.frame(dt)`
    in a browser produce the same simulation. That is what makes a physics-AI
-   kernel testable: all 2616 unit tests run without a GPU, and the wasm backend is
+   kernel testable: all 3441 unit tests run without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
    `deterministic` is false on both backends, because atomics promise no order, so
@@ -29,7 +29,7 @@ names a file, that file is the specification it describes.
    于是同一个场景既能无头训练，也能在浏览器里渲染游玩，结果完全一致。
 2. **关键路径都是确定性的。** 带种子的 RNG、固定步长、没有隐藏的全局状态，所以 Node
    里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。这让一个
-   物理-AI 内核变得可测：2616 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
+   物理-AI 内核变得可测：3441 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
    TS 求解器的每一个比特。两个 GPU 层用同样的方式对齐一份 CPU 参照，而且都不替自己
    声称确定性：两个后端的 `deterministic` 都是 false，因为原子操作不承诺顺序，所以
    训练与回放永远走参照档。
@@ -38,7 +38,7 @@ names a file, that file is the specification it describes.
 
 ```
 core     clock / ECS / events / engine facade     no three.js, no WASM
-physics  backend interface + three solvers        no three.js
+physics  backend interface + four solvers         no three.js
 gpu      probe, shared device, scale layers       no three.js, no WASM
 ai       MLP, Gaussian policy, policy-gradient    no three.js, no WASM
 envs     learning tasks (drive, reach, pursuit)   physics only
@@ -205,13 +205,14 @@ and cannot index a neighbour's slot even if the shader text is wrong.
 
 ### Physics backends
 
-All three implement `PhysicsBackend`, so envs and the trainer stay agnostic:
+All four implement `PhysicsBackend`, so envs and the trainer stay agnostic:
 
 | Backend | File | Notes |
 |---|---|---|
 | `builtin` | `src/physics/builtin.ts` | Pure TS, deterministic, zero dependencies. Default, and the normative spec. |
 | `wasm` | `src/physics/wasm.ts` | First-party Rust kernel. Bit-identical to `builtin`, 2.6x-4.9x faster in Node. |
 | `rapier` | `src/physics/rapier.ts` | Third-party Rapier WASM. Same interface, different solver: ~3% off steady-state speeds, and different trajectories. |
+| `mujoco` | `src/physics/mujoco.ts` | Third-party MuJoCo WASM. Same interface, plus the machine: a robot description compiles into links and joints whose poses come back as the solver's own kinematics. Non-deterministic, and its collision filter is a superset of the others'. |
 
 `wasm` is the backend whose claim is unusual. Not "same interface" but "same
 bits": `src/physics/reference.ts` defines one canonical scene plus a digest over
@@ -229,13 +230,83 @@ is lazy, folded in only at the next `world.step()`, so a first-frame impulse use
 to land on a body roughly 400x too light. `tests/rapier_backend.test.ts` asserts
 both the impulse-on-first-step behaviour and the cross-backend agreement.
 
-三个后端都实现 `PhysicsBackend`，因此 env 与 trainer 与之无关：
+`mujoco` is the one that carries a machine rather than a pile of bodies. A
+`RobotDescription` -- the tree `assets/robot.ts` reads URDF and MJCF into -- is
+written back out as MJCF by `assets/mjcf.ts` and compiled by MuJoCo itself, so
+the forward kinematics, the joint limits and the mass matrix are the solver's and
+not this engine's: `linkPose`, `jointPosition` and `sitePose` read them back, and
+`tests/mujoco_backend.test.ts` checks them link by link against the chain the
+description spells. Bodies made through `createBody` live in the same world and
+join the model by a recompile, which is batched: creates and state writes mark it
+dirty, and the next read pays for all of them once. The poses the file was
+authored to start from travel with it: `MjcfScene.keyframes` goes into every
+recompile, so a model's keyframe indices do not change meaning under a caller
+that adds a body. Two claims it does not make.
+`deterministic` is `false`, because the WASM build is compiled with SIMD whose
+reduction order the browser picks, so an environment that needs a replay must not
+land here by accident. And its collision filter joins `group` and `mask` with
+*or* where the other backends join them with *and*, which makes it a superset: a
+pair the others separate, this one may still report. Both are in the suite, so
+neither is something a reader has to find out at runtime.
+
+Its solids come from outside. A description names a mesh and points at a file;
+MuJoCo reads that file out of a file system attached to the compiler, so
+`meshBytes` carries the bytes in, keyed by the name a geom uses, and the mount
+lives exactly as long as the compile that consumed it -- MuJoCo copies a mesh
+into the model it builds. The bookkeeping is by file rather than by name,
+because two `<mesh>` declarations may point at one STL (one part at two scales)
+and the compiler then opens it twice off one buffer. A file with no bytes is
+refused at construction naming every link that draws or collides with it, all of
+them in one message rather than one per compile. What arrives is real geometry
+and not a placeholder, which the suite proves physically: a plate 4cm thick
+dropped from 0.6 comes to rest at 0.019724, its own half thickness, where a
+backend that had kept only the bounds would rest it at 0.2 and one that had
+loaded nothing would still be falling. Not every solid owes bytes: MJCF's
+`ellipsoid` is three semi-axes and nothing on disk, and this reader keeps it an
+ellipsoid instead of rounding it up to the sphere that contains it -- proven the
+same way, since dropped on its shortest axis it rests at 0.019325, where a sphere
+of the longest would rest at 0.05.
+
+Getting a pack into that model is most of what loading costs, and the shape of
+this code follows two measurements. The bindings' own way across the boundary,
+`MjVFS.addBuffer`, copies a buffer element by element at about 2 MiB/s, which
+makes the 17 MB of STL in the SO-101 pack an 8.7 s compile before MuJoCo reads a
+line of it; writing the same bytes into the file system the compiler reads from
+is a `memcpy` at about 774 MiB/s, and the same pack then compiles in 0.75 s. So
+a mount is a numbered directory under `/threedream-mesh`, written just before a
+compile and emptied just after, with the VFS kept as the fallback for a build
+that exports no file system. Numbered, because that file system is shared by
+every world in a page -- and so, one level up, is the solver: `@mujoco/mujoco`
+is a MODULARIZE build, so a factory call per world is a second solver per world,
+35 ms and 25 MB each and `destroy()` returns none of it, where one instance
+carried by every world makes the second world cost 1-2 ms and 0.2 MB. A trainer
+that wants the machine without its shells says so with `compileVisualSolids:
+false`: the visual geoms are already inert, since a shell carries `contype="0"`,
+but MuJoCo loads their vertices anyway, and on the workcell that is 891 ms and
+411 MiB of the compile against 75 ms and nothing a resident-set sample can see,
+for a trajectory identical to five decimals. A link the file weighed by its geoms
+keeps them whatever that option says, because there the mass is in what it draws.
+
+Those solids are a fetched pack rather than a drawing this repository made.
+`scripts/fetch_robots.ts` reads `scripts/robot_kit.json`, downloads a robot
+description at a pinned commit from its publisher's own repository, checks every
+file it receives against the blob sha1 GitHub publishes for that path at that
+commit, and writes `demo/public/models/arm-lab/manifest.json` and a licence file
+beside the bytes; a re-run against an unchanged spec fetches nothing, and the run
+refuses any file under the delivery root that no manifest row accounts for. So
+the arm the embodied demos train against is the SO-101 as The Robot Studio
+published it -- MJCF, solver settings, collision primitives and nineteen STL
+solids -- and the provenance and licence of each of them are on the record in
+[free-assets.md](free-assets.md).
+
+四个后端都实现 `PhysicsBackend`，因此 env 与 trainer 与之无关：
 
 | 后端 | 文件 | 说明 |
 |---|---|---|
 | `builtin` | `src/physics/builtin.ts` | 纯 TS、确定性、零依赖。默认，也是规范实现。 |
 | `wasm` | `src/physics/wasm.ts` | 自研 Rust 内核。与 `builtin` 逐位一致，Node 下快 2.6x-4.9x。 |
 | `rapier` | `src/physics/rapier.ts` | 第三方 Rapier WASM。接口相同，求解器不同：稳态速度差约 3%，轨迹也不同。 |
+| `mujoco` | `src/physics/mujoco.ts` | 第三方 MuJoCo WASM。接口相同，另外还带着一台机器：机器人描述被编译成连杆与关节，位姿以求解器自己的运动学返回。非确定性，且它的碰撞过滤是其他后端的超集。 |
 
 `wasm` 是承诺最特殊的那个后端。不是「接口相同」，而是「比特相同」：
 `src/physics/reference.ts` 定义一个规范场景，外加一个基于 IEEE-754 原始比特模式的
@@ -248,6 +319,55 @@ wgpu 骨架。`rapier` 保留下来，作为对「这里没人能控制的求解
 换后端真抓到过 bug：Rapier 的 `RigidBodyDesc.setAdditionalMass` 是惰性的，要到下一次
 `world.step()` 才生效，于是第一帧的冲量曾经打在一个轻了约 400 倍的刚体上。
 `tests/rapier_backend.test.ts` 同时断言「首帧冲量」行为和两个后端的一致性。
+
+`mujoco` 是唯一带着一台机器、而不是一堆刚体的后端。`RobotDescription` —— 也就是
+`assets/robot.ts` 把 URDF 与 MJCF 读成的那棵树 —— 由 `assets/mjcf.ts` 重新写成
+MJCF，再交给 MuJoCo 自己编译，于是正运动学、关节限位与质量矩阵都属于求解器，而不
+属于本引擎：`linkPose`、`jointPosition` 与 `sitePose` 把它们读回来，
+`tests/mujoco_backend.test.ts` 逐连杆对照描述自己拼出的那条链做校验。通过
+`createBody` 创建的刚体住在同一个世界里，靠一次重编译并入模型，而重编译是批量的：
+创建与状态写入只负责标脏，下一次读取统一付一次代价。文件写下来的那些起始姿态跟着它
+一起走：`MjcfScene.keyframes` 会被带进每一次重编译，于是一个模型的 keyframe 下标不会
+因为调用方加了一个刚体就变了意思。有两个承诺它不做。
+`deterministic` 是 `false`，因为 WASM 构建带 SIMD，归约顺序由浏览器决定，所以需要
+回放的环境不能意外落到这里。它的碰撞过滤用「或」连接 `group` 与 `mask`，
+而其他后端用「与」，因此它是超集：别的后端分开的一对，它可能仍然上报。两条都写在
+测试里，而不是留给读者在运行时发现。
+
+它的实体来自外面。描述只说出一个网格叫什么、指向哪个文件，而 MuJoCo 是从挂在编译器上
+的文件系统里读那个文件的，所以字节由 `meshBytes` 交进来、按 geom 用的那个名字索引，
+挂载的寿命就等于消费它的那一次编译 —— MuJoCo 会把网格拷进它建出来的模型里。记账按文件
+而不是按名字，因为两个 `<mesh>` 声明可以指向同一份 STL（同一个零件的两个 scale），编译器
+于是从一个 buffer 上把它打开两次。没有字节的文件在构造时就被拒绝，点名每一个画着它或拿它
+碰撞的 link，并且一次说全，而不是一次编译说一个。进来的是真几何、不是替身，这一条用物理
+证明：一块 4cm 厚的板从 0.6 落下，停在 0.019724 —— 它自己的半厚；只留下包围盒的后端会把
+它停在 0.2，什么都没装上的后端会让它一直掉下去。也不是每个实体都欠字节：MJCF 的
+`ellipsoid` 是三个半轴、盘上什么都没有，这个读取器把它留成椭球，而不是抹成装得下它的那个
+球 —— 证明方式相同：让它最短的那根轴朝下落，停在 0.019325，而按最长轴抹成球的后端会把它
+停在 0.05。
+
+把一个 pack 装进那个模型，是加载开销的大头，而这段代码长成这样是跟着两个测量走的。绑定
+自己那条过界的路 —— `MjVFS.addBuffer` —— 按元素拷贝一个 buffer，速率约 2 MiB/s，于是
+SO-101 pack 那 17 MB 的 STL，在 MuJoCo 读到第一行之前就变成 8.7 秒的编译；把同样的字节
+写进编译器读取的那个文件系统是一次 `memcpy`，约 774 MiB/s，同一个 pack 于是 0.75 秒编译
+完。所以挂载就是 `/threedream-mesh` 下一个带编号的目录，编译前写入、编译后清空，VFS 留给
+不导出文件系统的构建做回退。带编号，是因为那个文件系统由一个页面里的所有世界共用 —— 而
+再往上一层，求解器也是共用的：`@mujoco/mujoco` 是 MODULARIZE 构建，一个世界一次 factory
+调用就是一个世界一份求解器，每份 35 ms、25 MB，而 `destroy()` 一点都不还；由所有世界共持
+一个实例时，第二个世界只花 1–2 ms、0.2 MB。只想要这台机器、不想要它外壳的训练方，说一声
+`compileVisualSolids: false` 就行：visual geom 本来就是惰性的，因为外壳带着 `contype="0"`，
+但 MuJoCo 照样把它们的顶点装进去，而在这台工作台上那就是编译里的 891 ms 与 411 MiB，对比
+75 ms 与一个常驻集采样看不出来的增量，轨迹则到小数点后五位完全一致。至于文件靠 geom 称重
+的那种 link，无论这个选项怎么说都保留它的实体，因为它的质量就在它画的东西里。
+
+这些实体是取回来的一份 pack，而不是本仓库照着照片画的东西。`scripts/fetch_robots.ts`
+读 `scripts/robot_kit.json`，按钉住的 commit 从发布者自己的仓库下载一份机器人描述，
+把收到的每个文件与 GitHub 为该路径在该 commit 上公布的 blob sha1 对一遍，再把
+`demo/public/models/arm-lab/manifest.json` 与一份许可证文件写在字节旁边；对着未变的
+spec 重跑什么都不下，而交付根目录下只要有一个文件没有对应的 manifest 行，这一次运行
+就拒绝通过。于是具身 demo 用来训练的那条臂，就是 The Robot Studio 发布的那个 SO-101
+—— MJCF、求解器设置、碰撞图元与十九个 STL 实体 —— 而它们各自的出处与许可证都记录在
+[free-assets.md](free-assets.md) 里。
 
 ### The learner
 
@@ -285,6 +405,158 @@ the policy transfers across scales.
 `ReachEnv` 的 14 维观测是 6 个平面位置（agent / puck / goal）、4 个单位方向向量
 （agent->puck、puck->goal）和 4 个平面速度。接触类任务是二阶的：只知道 puck 在哪而不
 知道它正往哪滑，策略就永远慢一拍。位置按场地尺寸归一化，所以策略能跨尺度迁移。
+
+A trained policy has a deployment half, and it is deliberately not the training
+class: `src/ai/inference.ts` turns a snapshot into actions without importing the
+trainer, the critic or the GAE math, so a page that only plays a policy ships
+none of it. `decodeAction` is the one implementation of "mean plus scaled
+Gaussian noise", and the sampling stream lives in the inference object rather
+than in a kernel -- which is what lets a second kernel exist without a second
+policy appearing beside it.
+
+`src/ai/onnx.ts` is that second kernel. It writes a policy out as a `.onnx` file
+and reads one back, the protobuf emitted and parsed here rather than through a
+code generator, and `OnnxPolicyInference` runs the trunk through ONNX Runtime
+Web. The runtime is imported dynamically, so a caller who never asks for ONNX
+never instantiates its WASM. The graph carries the trunk only: `actionScale` and
+the per-dimension `logSigma` travel in `metadata_props`, and the reader refuses
+an artifact whose metadata disagrees with its own graph, so a policy fetched
+over HTTP fails at load and names the field instead of failing at step 4000 with
+a NaN. An export from a stack we do not own carries no such metadata and gets
+its head handed over explicitly.
+
+Two kernels do not agree to the bit, and nothing here pretends they do.
+`Mlp.gemv` accumulates one output in f64 and narrows once per layer; ONNX
+Runtime's MLAS blocks the same product to fit SIMD registers and reduces in its
+own order. `tests/onnx.test.ts` measures the gap on real trunks -- 9.5e-7
+open-loop on 6-64-64-2, 1.4e-6 worst over three closed-loop episodes -- and pins
+it with an order of magnitude of headroom, so another BLAS does not turn the
+suite red and a rescaled weight still does. Because the decode is shared,
+`sampled` mode draws the identical noise sequence on both paths and the only
+difference between the two trajectories is the trunk's last bit. That is the
+difference between "two implementations that mostly agree" and "one policy with
+two kernels", and `replay.ts` is where it becomes an assertion: `recordRollout`
+and `recordRolloutAsync` share one plan, and `compareTraces` reports the largest
+deviation per quantity plus the first step that broke a tolerance the caller
+stated.
+
+Cost is measured rather than assumed, and it is not a reason to move the
+reference path: a batch-1 `session.run` costs about seven times a TypeScript
+forward pass on the narrow trunk, and the order flips on a wide one, where a
+blocked GEMM finally has enough work to block. `ai/batch.ts` gathers a chunk's
+rows into one flat buffer, which is the shape that batched call wants.
+
+A demonstration is the other way in, and it arrives as a dataset rather than as
+a reward. `src/ai/dataset.ts` is the LeRobot v3.0 layout: the five files that
+make a dataset at the smallest, the bookkeeping columns the layout owns and a
+caller never supplies, and the per-dimension statistics -- including the five
+quantiles, which lerobot estimates from a 5000-bin histogram and this writer
+computes over every frame. It returns a map of path to bytes rather than a
+directory, because the recording happens in a browser: Node puts the same map on
+a filesystem, a page streams it to a mirror or to IndexedDB, and neither choice
+is made in the engine. The columnar container underneath it is
+`src/assets/parquet.ts`.
+
+That map leaves a page as one file. `src/assets/zip.ts` writes it as an archive
+and reads one back, which is the difference between a dataset a visitor can
+download and one that only ever existed in memory: the five files become a
+single `.zip`, and the page on the other side unpacks it into the same map
+`readDataset` takes. It writes to be reproducible -- names sorted, one fixed
+timestamp, no extra fields -- so the same recording twice is the same bytes, and
+a published artifact can be told apart from a different one. The central
+directory is the authority and the local header only a witness, which is what
+lets it read an archive carrying a self-extracting stub in front of it, and one
+whose sizes arrived in a data descriptor after the payload. Deflate is injected
+the way PNG's codecs are, so `src/` still imports nothing from `node:`.
+
+The container reads what a real lerobot writes, not only what this writer
+produces: Snappy-compressed pages and RLE_DICTIONARY-encoded ones, which is how a
+dataset recorded on an arm arrives. That is a claim about somebody else's bytes,
+so it is checked against somebody else's implementation --
+`scripts/lerobot_dataset_check.ts` hands a corpus to an installed lerobot and
+reports, one row a dataset, what each side made of the same bytes and what
+lerobot makes of the bytes written back. Two implementations written by the same
+hand agree perfectly and prove nothing, which is why the foreign side is a
+process and not a fixture. The five exact quantities are held to a tolerance; the
+five quantiles are held to numpy's, because lerobot answers from a 5000-bin
+per-episode histogram and clamps the outer two to `min - 1e-10`, and the distance
+between the two estimators is printed beside the verdict rather than asserted.
+
+`src/ai/imitation.ts` fits a policy to that recording. It is the other trainer's
+gradient with the advantage replaced by a constant, so the diagonal-Gaussian
+head and the sign conventions that were each paid for with a measured failure
+over there are inherited rather than re-derived, and what gets minimised is the
+log density: a squared-error fit would leave the head's sigma at whatever it was
+initialised to, and the policy would then be sampled from a width that means
+nothing. The trunk runs Adam (`src/ai/adam.ts`), because a supervised gradient
+is exact for the batch it came from and the parameters it moves differ in scale
+by orders of magnitude; the head keeps its own ascent at a rate of its own.
+Episodes are held out whole rather than frame by frame, and the epoch with the
+lowest held-out loss is the one kept. The normalisation the training happens in
+is folded into the first and last layers before the policy leaves, so the
+artifact that deploys -- a `PolicySnapshot`, or the ONNX graph written from it
+-- carries no mean and standard deviation a page would have to remember to
+apply.
+
+训练好的策略有部署的那一半，而且刻意不是训练时那个类：`src/ai/inference.ts` 把一份
+snapshot 变成动作，不 import trainer、critic 与 GAE 那套数学，所以一个只播放策略的页面
+一样都不会打包进去。`decodeAction` 是「均值加缩放高斯噪声」唯一的实现，采样流住在推理
+对象里而不是某个内核里 —— 这正是第二个内核可以存在、而不必在它旁边多出第二个策略的原因。
+
+`src/ai/onnx.ts` 就是那个第二内核。它把策略写成 `.onnx` 文件再读回来，protobuf 在这里
+自己写、自己解，不经代码生成器；`OnnxPolicyInference` 让 trunk 走 ONNX Runtime Web。运行时
+是动态 import 的，所以没要 ONNX 的调用方一次它的 WASM 都不会实例化。图里只有 trunk：
+`actionScale` 与每一维的 `logSigma` 走 `metadata_props`，而读取器拒绝一份元数据与自己的图
+对不上的产物，于是从 HTTP 取回来的策略在加载时就失败并点名字段，而不是跑到第 4000 步给出
+一个 NaN。别人那套栈导出的文件没有这份元数据，就显式把 head 交给它。
+
+两个内核不会逐位相同，这里也没有任何东西假装它们相同。`Mlp.gemv` 在 f64 里累加一个输出、
+每层收窄一次；ONNX Runtime 的 MLAS 为了塞进 SIMD 寄存器把同一个乘积分块，按自己的顺序
+归约。`tests/onnx.test.ts` 在真实 trunk 上量出这个差 —— 6-64-64-2 开环 9.5e-7，三段闭环
+里最差 1.4e-6 —— 并带着一个数量级的余量钉住它：换一套 BLAS 不会让测试变红，重新缩放一个
+权重仍然会。因为 decode 是共享的，`sampled` 模式在两条路径上抽出完全相同的噪声序列，两条
+轨迹之间唯一的差别是 trunk 的最后一个比特。这就是「两个大致相同的实现」与「一个策略、两个
+内核」的区别，而 `replay.ts` 是它变成断言的地方：`recordRollout` 与 `recordRolloutAsync`
+共用一份 plan，`compareTraces` 报告每个量的最大偏差，以及第一个越过调用方给定容差的那一步。
+
+代价是量出来的，不是假设出来的，而且它不构成把参照路径搬走的理由：窄 trunk 上一次 batch-1
+的 `session.run` 大约是 TypeScript 前向的七倍开销，宽 trunk 上这个次序会翻过来，因为分块
+GEMM 终于有了够多的活可分。`ai/batch.ts` 把一个 chunk 的行收进一整块连续缓冲，那正是批量
+调用想要的形状。
+
+示教是另一条入口，而且它是以数据集的形式到达的，不是以奖励的形式。`src/ai/dataset.ts`
+就是 LeRobot v3.0 的排布：一个数据集最小的那五个文件、由排布自己拥有因而调用方永远不
+会去提供的簿记列，以及每一维的统计量 —— 其中五个分位数 lerobot 用一张 5000 桶的直方图
+估计，这里在全部帧上直接算。它交出的是一张「路径 → 字节」的表而不是一个目录，因为录制
+发生在浏览器里：Node 把同一张表落到文件系统上，页面把它流到镜像或 IndexedDB，这两种
+选择都不在引擎里做。底下那层列式容器住在 `src/assets/parquet.ts`。
+
+这张表以「一个文件」的形式离开页面。`src/assets/zip.ts` 把它写成归档、也把它读回来，这就
+是「一个访客能下载的数据集」与「一个只存在于内存里的数据集」之间的区别：五个文件变成一个
+`.zip`，另一侧的页面把它解回 `readDataset` 要的那张表。它是照着可复现写的 —— 名字排序、
+统一一个固定时间戳、不带 extra 字段 —— 所以同一份录制跑两次得到同一串字节，一个已发布的
+产物才和另一个区分得开。中央目录是权威，本地头只是证人，这也是它读得了「前面带着自解压
+壳」的归档、和「尺寸写在 payload 之后的 data descriptor 里」的归档的原因。deflate 按 PNG
+那套注入进来，所以 `src/` 依然不 import 任何 `node:`。
+
+这层容器读的是真实 lerobot 写出来的东西，不只是这个写方产出的东西：Snappy 压缩的页、
+RLE_DICTIONARY 编码的页 —— 一份在机械臂上录下来的数据集就是这样到达的。这是关于别人字节
+的断言，所以要拿别人的实现来核：`scripts/lerobot_dataset_check.ts` 把一个语料库交给装好的
+lerobot，逐个数据集报告一行 —— 两侧对同一份字节各读出了什么，以及写回之后的那份字节
+lerobot 又读出什么。同一只手写出来的两个实现会完美地互相同意，因而什么也证明不了，这正是
+对面那一侧是一个进程而不是一个 fixture 的原因。五个精确量按容差钉住；五个分位数按 numpy
+的那一个钉住，因为 lerobot 是从一张 5000 桶的逐 episode 直方图回答的，而且把最外两个夹到
+`min - 1e-10`；两个估计量之间的距离写在结论旁边，是量出来的，不是断言出来的。
+
+`src/ai/imitation.ts` 把策略拟合到这份录制上。它就是另一个 trainer 的梯度、把优势换成
+一个常数，所以对角高斯头与那些「各自被一次实测失败买下来」的符号约定是继承来的，不是
+重新推的；被最小化的是对数密度：换成平方误差，头的 sigma 就会停在它被初始化到的那个
+值上，于是策略将从一个什么都不表示的宽度里被采样出来。trunk 走 Adam（`src/ai/adam.ts`），
+因为一个监督梯度对它所在的那个 batch 是精确的，而它要动的参数在尺度上相差几个数量级；
+头保留自己的上升方向与自己的步长。留出是按整段 episode 而不是按帧，留下的是留出损失
+最低的那个 epoch。训练所在的那个归一化，在策略离开之前被折进首末两层，于是部署出去的
+产物 —— 一份 `PolicySnapshot`，或由它写出的 ONNX 图 —— 不带任何需要页面记得去应用的
+均值与标准差。
 
 ## Headless training
 
@@ -336,7 +608,7 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 2616 unit tests in 93 files, headless, no GPU needed | ~28s |
+| `npm test` | 3441 unit tests in 118 files, headless, no GPU needed | ~21s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
 | `npm run test:e2e` | 65 Playwright tests over 8 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
@@ -345,7 +617,10 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | `node scripts/bench_gpu_soft.mjs` | the M4 ladder at 1k/5k/10k/20k nodes, 160 steps a rung: the same distribution, plus dispatches, colors and stretch | ~3s |
 | `npx tsx scripts/bench_cpu_soft.ts` | the same M4 ladder on the fallback tier: `softCpu.ts`, single-threaded, no GPU, p50/p95 a step at 1k-20k nodes and a fitted us/node | ~10s |
 | `npm run diagrams` / `npm run diagrams:check` | rasterise `docs/diagrams/*.svg` to the committed PNGs, or gate them against the manifest's hashes | ~5s / ~0s |
-| `node scripts/capture_shots.mjs` | the screenshots in the README and the share cards: 12 captures of the built pages served at their deployment subpath, each gated on the page's own tier report | ~40s |
+| `node scripts/capture_shots.mjs` | the screenshots in the README and the share cards: 14 captures of the built pages served at their deployment subpath, each gated on the page's own tier report | ~40s |
+| `node scripts/check_live_demo.mjs` | boot a *deployed* page headless and read the verdict the page publishes, with every request it made: the check that the mirror two hops away still serves what the bundle asks for | ~1 min a page |
+| `npx tsx scripts/robot_zoo_check.ts` | read, write and re-read every robot model in the opt-in zoo under `thirdparty/rosclaw`, one row each: the command behind the claim that the URDF and MJCF readers hold on models other people wrote. Not a gate step, because the zoo is ignored; exits 0 when it is absent | ~3s |
+| `npx tsx scripts/lerobot_dataset_check.ts` | hand every dataset under `thirdparty/lerobot-datasets` to an installed lerobot, one row each: what this reader made of the bytes, what lerobot made of them, and what lerobot makes of the bytes written back. With no corpus on disk it asks lerobot to write one. The five quantiles are held to numpy and the distance to lerobot's histogram estimator is printed beside the verdict rather than asserted. Not a gate step, because the second implementation is a python process the suite does not own; exits 0 when lerobot is absent and carries the interpreter's own reason | ~10s |
 
 The two e2e projects exist because the pages need two different GPUs. `demo`,
 `physics-check`, `particles` and `soft` only need *a* GL context, and headless
@@ -563,14 +838,16 @@ project's into `demo/public/ue/shooter`, the pack's into
 A mesh found through a mount carries the level's own spelling as an `aliases`
 entry beside its name, so the page resolves an actor's `meshName` without ever
 learning that a redirect happened. The name table is committed (it is names, not
-bytes) and the pack is not, nor is its extract: `AbandonedFactory` ships no
-licence at all, so `thirdparty/AbandonedFactory/` and `demo/public/ue/shooter/`
-are both ignored and `?level=mainmap` 404s on a fresh clone until a contributor
-who has the pack runs that import. That is the honest shape of it. The level, the
+bytes), and so is the imported project's own half of the extract: the level, the
 rifle, the arms and their animations, the targets and the one weapon `SoundWave`
-are the Apache-2.0 project's own and ship; the town it stands in is somebody's
-unlicensed marketplace set and does not. The rule and the survey behind it are in
-[free-assets.md](free-assets.md).
+-- 26 files, 6.5 MB, published to the asset mirror with the rest of the
+delivery. `AbandonedFactory` ships no licence at all, so
+`thirdparty/AbandonedFactory/` and `demo/public/ue/shooter/pack/` are both
+ignored and the town's 534 MB never enters this repository; a deployed page
+reads those bytes from the mirror that carries them, `mc0700/td-ue-fps-pack`,
+pinned by revision in `demo/assetBase.ts`, so `?level=mainmap` resolves without
+this repository redistributing anything it was not granted. The rule and the
+survey behind it are in [free-assets.md](free-assets.md).
 
 Output lands under `demo/public/ue/` with a `manifest.json` per kind: glTF meshes,
 PNG textures, glTF materials plus the parameters each one resolved to, the map's
@@ -626,12 +903,13 @@ flag 取 0 时按原样写出 2,027 MiB 的 4k 漫反射与法线（单是一张
 
 经 mount 找到的网格，会在自己的名字旁边多带一条 `aliases`，也就是关卡原来那种拼写，所以
 页面解析 actor 的 `meshName` 时完全不需要知道曾经发生过重定向。名字表是提交的（它是
-名字，不是字节），资源包不提交，导入产物也不提交：`AbandonedFactory` 根本没有许可证，
-所以 `thirdparty/AbandonedFactory/` 与 `demo/public/ue/shooter/` 都被 ignore，
-`?level=mainmap` 在新克隆上会 404，直到某个手上有这个包的贡献者把上面这套导入跑一遍。
-这才是它诚实的样子：关卡、步枪、手臂及其动画、靶子、那一个武器 `SoundWave` 都是
-Apache-2.0 工程自己的，随仓库发布；它站着的那座城是别人没有授权的商城资源，不发布。规则
-与背后的调研在 [free-assets.md](free-assets.md)。
+名字，不是字节），导入产物里属于工程自己的那一半也是提交的：关卡、步枪、手臂及其动画、
+靶子、那一个武器 `SoundWave` —— 26 个文件、6.5 MB，和交付里其余的部分一起发布到资产镜像。
+`AbandonedFactory` 根本没有许可证，所以 `thirdparty/AbandonedFactory/` 与
+`demo/public/ue/shooter/pack/` 都被 ignore，那座城的 534 MB 从不进入本仓库；部署出去的
+页面从承载这些字节的镜像 `mc0700/td-ue-fps-pack` 去读，版本在 `demo/assetBase.ts` 里钉住，
+于是 `?level=mainmap` 能解析，而本仓库没有再分发任何它没被授权的东西。规则与背后的调研在
+[free-assets.md](free-assets.md)。
 
 产物落在 `demo/public/ue/`，每类一份 `manifest.json`：glTF 网格、PNG 贴图、glTF 材质及其
 解析出的参数、地图里的 actor（以 placement 的形式），以及每个 `SoundWave` 一个可播放文件，
@@ -649,26 +927,46 @@ wave，其中 8 条 cue 把 28 个接到了事件上；4 把武器通过各自�
 
 ```
 src/core/      clock.ts digest.ts ecs.ts engine.ts events.ts rng.ts
-src/physics/   types.ts builtin.ts wasm.ts rapier.ts reference.ts components.ts
+src/physics/   types.ts builtin.ts wasm.ts rapier.ts mujoco.ts reference.ts
+               components.ts
 src/gpu/       capabilities.ts device.ts compute.ts particle*.ts soft*.ts
-src/ai/        mlp.ts policy.ts trainer.ts baseline.ts
+src/ai/        mlp.ts policy.ts trainer.ts baseline.ts, then the half that
+               deploys a trained policy: inference.ts (the reference kernel and
+               the decode both paths share), replay.ts (a rollout pinned by
+               digest, and the comparison that holds two kernels to each other),
+               batch.ts (a chunk's rows gathered into one flat buffer), onnx.ts
+               (the same policy through ONNX Runtime, plus the writer and reader
+               of the artifact that carries it), and the half that learns from a
+               recording instead of a reward: dataset.ts (the LeRobot v3.0
+               layout, written and read back), adam.ts (the update rule a
+               supervised gradient earns), imitation.ts (behaviour cloning, with
+               its normalisation folded into the layers that leave)
 src/envs/      types.ts drive.ts reach.ts pursuit.ts
 src/assets/    glTF document/mesh/skin/animation/material, rgbe (HDR sky, sun
-               bearing), glb (the re-pack path a fetched prop goes through), and
-               ue/: the uasset package reader, property tags, Oodle bulk data,
-               compressed buffers, mesh descriptions, textures, material graphs,
-               sound waves and cues
+               bearing), glb (the re-pack path a fetched prop goes through),
+               xml (the text both robot formats are written in), robot (the one
+               description shape they are read into, and the pose arithmetic
+               both readers fold with), urdf, mjcf (reader and writer), stl (the
+               solids both of them point at, reader and writer both), parquet
+               (the columnar container a dataset lives in, reader and writer
+               both), zip (the one file that map leaves a page in, reader and
+               writer both), and ue/: the uasset package reader, property tags,
+               Oodle bulk data, compressed buffers, mesh descriptions, textures,
+               material graphs, sound waves and cues
 src/render/    scene.ts particles.ts soft.ts assets.ts rig.ts
 rust/          physics (solver) / physics-wasm (ABI) / gpu (wgpu skeleton)
 wasm/pkg/      the shipped wasm kernel, rebuilt by `npm run build:wasm`
 scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle the
                host site serves) publish_assets.ts (the asset mirror)
                publish_docs.ts (the public docs mirror) train_headless.ts
-               check_wasm_artifact.mjs bench_*.mjs ue_texture_encode.ts
-               capture_shots.mjs render_diagrams.mjs ue_extract.ts ue_redirects.ts
+               check_wasm_artifact.mjs check_live_demo.mjs bench_*.mjs
+               ue_texture_encode.ts capture_shots.mjs render_diagrams.mjs
+               ue_extract.ts ue_redirects.ts
                ue_redirects/ (the committed name tables, names not bytes)
                audit_unreal_reference.mjs clone_unreal_reference.sh
-               cc0_kit.json fetch_cc0.ts
+               robot_zoo_check.ts (the same idea, over the robot zoo)
+               lerobot_dataset_check.ts (the same idea, against a real lerobot)
+               cc0_kit.json fetch_cc0.ts robot_kit.json fetch_robots.ts
 docs/          this file, feasibility study, development plan, free-assets.md
                (the licence survey behind the scene kit), diagrams/ (SVG sources
                and the PNGs the README shows, gated by render_diagrams.mjs),
@@ -679,11 +977,14 @@ demo/          index (trainer), physics-check, shared-device, particles, soft,
                sceneKit.ts + kitview.ts: the CC0 layout planner that runs in
                bare Node, and the view code that dresses the level with it), plus
                pages.ts and nav.ts (the shared nav) and public/ (favicon, share
-               cards, trained policies, ue/ assets the import tool wrote, and
-               cc0/: the scene kit, with its manifest.json and LICENSE.md; the
-               ue/shooter/ extract is ignored: it is bytes from a pack that
-               ships no licence, reproducible by the two commands above)
-tests/         93 files, 2616 tests
+               cards, trained policies, ue/ assets the import tool wrote,
+              models/arm-lab/: the robot kit, fetched by fetch_robots.ts with
+              its manifest.json and LICENSE.md, and cc0/: the scene kit, with
+              its manifest.json and LICENSE.md; the
+               ue/shooter/ extract ships except for pack/, which is ignored:
+               bytes from a pack that ships no licence, reproducible by the two
+               commands above and read from a mirror of their own)
+tests/         118 files, 3441 tests
 e2e/           demo, wasm physics, particles, soft (WebGL); shared device and
                the GPU halves of particles and soft (WebGPU)
 .github/       ci.yml: four gates (verify / coverage / e2e / rust) then the bundle
