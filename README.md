@@ -109,6 +109,18 @@ so weights trained by a stack this repo does not own arrive through the same
 door the ones trained here leave by — and the distance between the two kernels
 is a number the suite measures, not an assumption anybody maintains.
 
+A task is a document, not a file. A level's boxes, a robot description and one
+JSON document — where the goal is, what a policy sees, what it may command, what
+the reward is made of — compose into a trainable environment, and nothing between
+the three is written per task: `npm run sim-env -- --task
+demo/public/tasks/so101-reach-the-basket.json` takes the shipped example from an
+untrained 0/20 to 10/10 over 320 episodes, headless, in about two minutes. A
+document that misspells a reward term is refused with every reason at once rather
+than training quietly into a policy that learned nothing, and what a composition
+had to settle for — solids pruned by distance, ones too thin to collide — is
+counted out loud. That is the surface the next milestone scales: one document,
+many environments, one device.
+
 仿真既不需要浏览器也不需要 GPU，因此训练在 Node 里以循环的速度无头运行，而页面以
 60 fps 播放结果：带 GAE 与学习式 critic 的策略梯度学习器、类型化定长 buffer 上的
 gymnasium 风格环境、以及在两个宿主上含义完全相同的同一份策略文件。确定性让这座桥
@@ -118,6 +130,14 @@ gymnasium 风格环境、以及在两个宿主上含义完全相同的同一份�
 这份策略文件同时也是一份 `.onnx`。同一个 trunk 经 ONNX Runtime Web 跑第二个内核，并与
 TypeScript 路径共用同一个 decode，所以不是本仓库训练出来的权重，进出走的是同一扇门——
 而两个内核之间的距离，是测试量出来的一个数，不是靠谁维护的一个假设。
+
+任务是一份文档，不是一个文件。一个关卡的盒子、一份机器人描述、一份 JSON 文档（目标在哪、
+策略看得见什么、能命令什么、reward 由什么组成）组合成一个可训练的环境，三者之间不为某个任务
+新写一行代码：`npm run sim-env -- --task demo/public/tasks/so101-reach-the-basket.json` 把随仓库
+发布的那个例子从未训练的 0/20 训到 10/10，320 局，无头，约两分钟。一份把 reward 项拼错的文档
+会被一次报出全部原因地拒绝，而不是安静地训出一个什么也没学到的策略；一次组合不得不将就的东西
+——按距离剪掉的固体、薄到无法碰撞的固体——都被数出来、报出来。这就是下一个里程碑要放大的那个
+面：同一份文档，多个环境，一个设备。
 
 ## Architecture / 架构
 
@@ -230,7 +250,8 @@ speed, the red cube in the jaw on its way to the basket.*
 | 100,000 particles, one WebGPU step | 20-26 ms on an iGPU, median of 20 timed chunks |
 | 20,000-node soft body, one step | 3.9-6.3 ms, race-free by constraint coloring, no atomics |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 4,167 unit tests in 135 files, 67 browser tests, 68 Rust tests |
+| Tests | 4,306 unit tests in 139 files, 67 browser tests, 68 Rust tests |
+| A task document to a trained policy | 320 episodes headless, 0/20 untrained to 10/10, ~2.3 min |
 | Live pages | eight, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
@@ -238,7 +259,8 @@ speed, the red cube in the jaw on its way to the basket.*
 | 10 万粒子，一个 WebGPU 步 | iGPU 上 20–26 ms，20 个计时 chunk 的中位数 |
 | 2 万节点软体，一个步 | 3.9–6.3 ms，靠约束着色无竞争，不用原子操作 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 135 个文件 4,167 个单元测试、67 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 139 个文件 4,306 个单元测试、67 个浏览器测试、68 个 Rust 测试 |
+| 一份任务文档到一个训练好的策略 | 无头 320 局，未训练 0/20 到 10/10，约 2.3 分钟 |
 | 线上页面 | 八个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
