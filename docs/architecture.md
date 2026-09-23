@@ -21,7 +21,7 @@ names a file, that file is the specification it describes.
    in a browser produce the same simulation. The arithmetic is the engine's own
    too: `core/trig.ts` writes every transcendental ECMAScript leaves
    implementation-approximated, so a digest does not move when a host's libm does.
-   That is what makes a physics-AI kernel testable: all 4476 unit tests run
+   That is what makes a physics-AI kernel testable: all 4493 unit tests run
    without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
@@ -33,7 +33,7 @@ names a file, that file is the specification it describes.
 2. **关键路径都是确定性的。** 带种子的 RNG、固定步长、没有隐藏的全局状态，所以 Node
    里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。运算也是引
    擎自己的：`core/trig.ts` 写了 ECMAScript 留给实现近似的全部超越函数，所以宿主换一
-   个 libm 构建，摘要不动。这让一个物理-AI 内核变得可测：4476 个单元测试全都不需要
+   个 libm 构建，摘要不动。这让一个物理-AI 内核变得可测：4493 个单元测试全都不需要
    GPU，而 wasm 后端要对齐它所移植的
    TS 求解器的每一个比特。两个 GPU 层用同样的方式对齐一份 CPU 参照，而且都不替自己
    声称确定性：两个后端的 `deterministic` 都是 false，因为原子操作不承诺顺序，所以
@@ -614,7 +614,7 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 4476 unit tests in 144 files, headless, no GPU needed | ~25s |
+| `npm test` | 4493 unit tests in 144 files, headless, no GPU needed | ~25s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
 | `npm run test:e2e` | 67 Playwright tests over 9 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
@@ -1034,7 +1034,7 @@ demo/          index (trainer), physics-check, shared-device, particles, soft,
                ue/shooter/ extract ships except for pack/, which is ignored:
                bytes from a pack that ships no licence, reproducible by the two
                commands above and read from a mirror of their own)
-tests/         144 files, 4476 tests
+tests/         144 files, 4493 tests
 e2e/           demo, wasm physics, particles, soft, the UE level's digest, the
                arm lab (WebGL); shared device and the GPU halves of particles and
                soft (WebGPU)
