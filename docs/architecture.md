@@ -987,12 +987,16 @@ src/render/    scene.ts articulatedScene.ts (a machine drawn link by link
                sections gets, which is also where every texture request is
                announced to that level's ledger) sceneBytes.ts (what such a scene
                costs the card, deduplicated by uuid so a kit shared by three
-               hundred meshes is counted once, and naming what it could not size)
+               hundred meshes is counted once, textures counted per object because
+               that is what the WebGPURenderer this engine creates allocates and
+               per (image, parameters) key beside it because that is what a
+               WebGLRenderer caches by, and naming what it could not size)
                textureBudget.ts (how much of that cost stays resident: a byte
-               budget over one scene's textures, met by giving up mip levels
-               rather than art, chosen by how far the nearest mesh that draws
-               each one is and paid for with one uniform bias, and refusing to
-               drop what it could not fetch back)
+               budget over one scene's textures, kept per image and not per texture
+               object because clones of one image cannot hold different levels,
+               met by giving up mip levels rather than art, chosen by how far the
+               nearest mesh that draws each one is and paid for with one uniform
+               bias, and refusing to drop what it could not fetch back)
 rust/          physics (solver) / physics-wasm (ABI) / gpu (wgpu skeleton)
 wasm/pkg/      the shipped wasm kernel, rebuilt by `npm run build:wasm`
 scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle the

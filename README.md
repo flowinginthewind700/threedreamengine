@@ -243,6 +243,14 @@ hitscan。*
 speed, the red cube in the jaw on its way to the basket.*
 *机械臂页的中途：页面自己录下的演示正在半速回放，红色方块夹在夹爪里，正送往篮子。*
 
+![the hall of fame, walked into: a staircase per board, rank one on the highest step](docs/demo-lb-arena.jpg)
+
+*The hall of fame: the host site's model leaderboards as rooms you walk. One
+hall per capability, one staircase per board, rank one on the highest step with
+a cup over its head; a shot opens the model's card.*
+*名人堂：把宿主站的模型榜单做成可以走进去的房间。一种能力一个展厅，一块榜一道阶梯，
+第一名站在最高的台阶上、奖杯悬在头顶；开一枪就翻开那个模型的卡片。*
+
 ## By the numbers / 关键数字
 
 | | |
