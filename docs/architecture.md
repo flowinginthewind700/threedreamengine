@@ -996,7 +996,9 @@ src/render/    scene.ts articulatedScene.ts (a machine drawn link by link
                object because clones of one image cannot hold different levels,
                met by giving up mip levels rather than art, chosen by how far the
                nearest mesh that draws each one is and paid for with one uniform
-               bias, and refusing to drop what it could not fetch back)
+               bias, with the slack that bias cannot spend handed back one level at
+               a time to the nearest surfaces, and refusing to drop what it could
+               not fetch back)
 rust/          physics (solver) / physics-wasm (ABI) / gpu (wgpu skeleton)
 wasm/pkg/      the shipped wasm kernel, rebuilt by `npm run build:wasm`
 scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle the
