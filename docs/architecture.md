@@ -21,7 +21,7 @@ names a file, that file is the specification it describes.
    in a browser produce the same simulation. The arithmetic is the engine's own
    too: `core/trig.ts` writes every transcendental ECMAScript leaves
    implementation-approximated, so a digest does not move when a host's libm does.
-   That is what makes a physics-AI kernel testable: all 4306 unit tests run
+   That is what makes a physics-AI kernel testable: all 4428 unit tests run
    without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
@@ -33,7 +33,7 @@ names a file, that file is the specification it describes.
 2. **关键路径都是确定性的。** 带种子的 RNG、固定步长、没有隐藏的全局状态，所以 Node
    里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。运算也是引
    擎自己的：`core/trig.ts` 写了 ECMAScript 留给实现近似的全部超越函数，所以宿主换一
-   个 libm 构建，摘要不动。这让一个物理-AI 内核变得可测：4306 个单元测试全都不需要
+   个 libm 构建，摘要不动。这让一个物理-AI 内核变得可测：4428 个单元测试全都不需要
    GPU，而 wasm 后端要对齐它所移植的
    TS 求解器的每一个比特。两个 GPU 层用同样的方式对齐一份 CPU 参照，而且都不替自己
    声称确定性：两个后端的 `deterministic` 都是 false，因为原子操作不承诺顺序，所以
@@ -614,7 +614,7 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 4306 unit tests in 139 files, headless, no GPU needed | ~25s |
+| `npm test` | 4428 unit tests in 143 files, headless, no GPU needed | ~25s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
 | `npm run test:e2e` | 67 Playwright tests over 9 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
@@ -624,6 +624,7 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | `npx tsx scripts/bench_cpu_soft.ts` | the same M4 ladder on the fallback tier: `softCpu.ts`, single-threaded, no GPU, p50/p95 a step at 1k-20k nodes and a fitted us/node | ~10s |
 | `npm run sim-env` | compose a task document against a machine and a level and run it headless: the sizes a policy is built at, how much of a level came and how much was pruned, every note the composition settled for, the cost of one control step, and with `--episodes n` a training run and a greedy score after it | 1.5s to measure / ~2.3 min for 320 episodes |
 | `npm run bench:env` | the env factory's two ladders: one instance over a growing world (1/8/32 loose bodies) timed against MuJoCo WASM compiled from the same composed scene, and a fleet of independent envs (1-8) stepped round-robin for the linearity M11 stands on | ~1.5 min |
+| `npx tsx scripts/profile_boot.ts` | what one page boot costs, from four sources no single one of which can see all of it: the heap curve and its allocation floor from CDP `Performance.getMetrics`, the GC pause distribution from a `v8` trace, the frames of the load itself from a sampler installed before any page code runs, and the bytes left resident on the GPU and wasm sides. `--runs n` reports the median and the spread across boots, `--measure ms` bounds how long the page gets to finish counting its own scene | ~1.5 min a boot on `ue-fps ?level=mainmap`, ~4.5 min for three |
 | `npm run diagrams` / `npm run diagrams:check` | rasterise `docs/diagrams/*.svg` to the committed PNGs, or gate them against the manifest's hashes | ~5s / ~0s |
 | `node scripts/capture_shots.mjs` | the screenshots in the README and the share cards: 14 captures of the built pages served at their deployment subpath, each gated on the page's own tier report | ~40s |
 | `node scripts/check_live_demo.mjs` | boot a *deployed* page headless and read the verdict the page publishes, with every request it made: the check that the mirror two hops away still serves what the bundle asks for | ~1 min a page |
@@ -935,9 +936,14 @@ wave，其中 8 条 cue 把 28 个接到了事件上；4 把武器通过各自�
 
 ```
 src/core/      clock.ts digest.ts ecs.ts engine.ts events.ts rng.ts trig.ts
+               profile.ts
                (every transcendental the spec leaves implementation-approximated,
                written in the arithmetic it pins, so a digested simulation answers
-               the same bits on every host)
+               the same bits on every host; and the arithmetic of a measurement --
+               nearest-rank percentiles, a heap curve that says in so many bytes
+               that it is a floor, a frame report against the engine's own fixed
+               step -- owned here rather than rewritten by each script that samples,
+               so "what is the p95" is one question with one answer)
 src/physics/   types.ts builtin.ts wasm.ts rapier.ts mujoco.ts reference.ts
                components.ts
 src/gpu/       capabilities.ts device.ts compute.ts particle*.ts soft*.ts
@@ -968,12 +974,20 @@ src/assets/    glTF document/mesh/skin/animation/material, rgbe (HDR sky, sun
                solids both of them point at, reader and writer both), parquet
                (the columnar container a dataset lives in, reader and writer
                both), zip (the one file that map leaves a page in, reader and
-               writer both), and ue/: the uasset package reader, property tags,
+               writer both), textureLedger (which textures a level asked for and
+               which of them arrived, so "this level is textured" is a question
+               with an answer instead of a hope), and ue/: the uasset package
+               reader, property tags,
                Oodle bulk data, compressed buffers, mesh descriptions, textures,
                material graphs, sound waves and cues
 src/render/    scene.ts articulatedScene.ts (a machine drawn link by link
                from the description a robot file compiled into) particles.ts
-               soft.ts assets.ts rig.ts
+               soft.ts assets.ts rig.ts levelScene.ts surface.ts (the level a
+               project's placements are drawn into, and the material each of its
+               sections gets, which is also where every texture request is
+               announced to that level's ledger) sceneBytes.ts (what such a scene
+               costs the card, deduplicated by uuid so a kit shared by three
+               hundred meshes is counted once, and naming what it could not size)
 rust/          physics (solver) / physics-wasm (ABI) / gpu (wgpu skeleton)
 wasm/pkg/      the shipped wasm kernel, rebuilt by `npm run build:wasm`
 scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle the
@@ -984,6 +998,10 @@ scripts/       gate.ts (the CI graph, run locally) build_inpage.ts (the bundle t
                headless) bench_env_factory.ts (the same composition's two ladders:
                a growing world against the reference, a growing fleet for
                linearity)
+               profile_boot.ts (what one page boot costs, measured rather than
+               argued about: the heap curve and its allocation floor, the GC pause
+               distribution, the frames of the load itself, and the bytes left
+               resident on the GPU and wasm sides)
                ue_texture_encode.ts capture_shots.mjs render_diagrams.mjs
                ue_extract.ts ue_redirects.ts
                ue_redirects/ (the committed name tables, names not bytes)
@@ -1011,7 +1029,7 @@ demo/          index (trainer), physics-check, shared-device, particles, soft,
                ue/shooter/ extract ships except for pack/, which is ignored:
                bytes from a pack that ships no licence, reproducible by the two
                commands above and read from a mirror of their own)
-tests/         139 files, 4306 tests
+tests/         143 files, 4428 tests
 e2e/           demo, wasm physics, particles, soft, the UE level's digest, the
                arm lab (WebGL); shared device and the GPU halves of particles and
                soft (WebGPU)
