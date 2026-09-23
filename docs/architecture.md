@@ -18,8 +18,11 @@ names a file, that file is the specification it describes.
    results.
 2. **Everything that matters is deterministic.** A seeded RNG, a fixed timestep,
    and no hidden global state mean `engine.step(n)` in Node and `engine.frame(dt)`
-   in a browser produce the same simulation. That is what makes a physics-AI
-   kernel testable: all 4167 unit tests run without a GPU, and the wasm backend is
+   in a browser produce the same simulation. The arithmetic is the engine's own
+   too: `core/trig.ts` writes every transcendental ECMAScript leaves
+   implementation-approximated, so a digest does not move when a host's libm does.
+   That is what makes a physics-AI kernel testable: all 4201 unit tests run
+   without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
    `deterministic` is false on both backends, because atomics promise no order, so
@@ -28,8 +31,10 @@ names a file, that file is the specification it describes.
 1. **仿真是唯一事实来源。** 渲染层每帧把物理状态镜像到 `THREE.Object3D`，从不回写。
    于是同一个场景既能无头训练，也能在浏览器里渲染游玩，结果完全一致。
 2. **关键路径都是确定性的。** 带种子的 RNG、固定步长、没有隐藏的全局状态，所以 Node
-   里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。这让一个
-   物理-AI 内核变得可测：4167 个单元测试全都不需要 GPU，而 wasm 后端要对齐它所移植的
+   里的 `engine.step(n)` 与浏览器里的 `engine.frame(dt)` 跑的是同一个仿真。运算也是引
+   擎自己的：`core/trig.ts` 写了 ECMAScript 留给实现近似的全部超越函数，所以宿主换一
+   个 libm 构建，摘要不动。这让一个物理-AI 内核变得可测：4201 个单元测试全都不需要
+   GPU，而 wasm 后端要对齐它所移植的
    TS 求解器的每一个比特。两个 GPU 层用同样的方式对齐一份 CPU 参照，而且都不替自己
    声称确定性：两个后端的 `deterministic` 都是 false，因为原子操作不承诺顺序，所以
    训练与回放永远走参照档。
@@ -37,7 +42,7 @@ names a file, that file is the specification it describes.
 ## Layers
 
 ```
-core     clock / ECS / events / engine facade     no three.js, no WASM
+core     clock / ECS / events / engine / math     no three.js, no WASM
 physics  backend interface + four solvers         no three.js
 gpu      probe, shared device, scale layers       no three.js, no WASM
 ai       MLP, Gaussian policy, policy-gradient    no three.js, no WASM
@@ -609,7 +614,7 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 4167 unit tests in 135 files, headless, no GPU needed | ~25s |
+| `npm test` | 4201 unit tests in 135 files, headless, no GPU needed | ~25s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
 | `npm run test:e2e` | 67 Playwright tests over 9 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
@@ -927,7 +932,10 @@ wave，其中 8 条 cue 把 28 个接到了事件上；4 把武器通过各自�
 ## Layout
 
 ```
-src/core/      clock.ts digest.ts ecs.ts engine.ts events.ts rng.ts
+src/core/      clock.ts digest.ts ecs.ts engine.ts events.ts rng.ts trig.ts
+               (every transcendental the spec leaves implementation-approximated,
+               written in the arithmetic it pins, so a digested simulation answers
+               the same bits on every host)
 src/physics/   types.ts builtin.ts wasm.ts rapier.ts mujoco.ts reference.ts
                components.ts
 src/gpu/       capabilities.ts device.ts compute.ts particle*.ts soft*.ts
@@ -990,7 +998,7 @@ demo/          index (trainer), physics-check, shared-device, particles, soft,
                ue/shooter/ extract ships except for pack/, which is ignored:
                bytes from a pack that ships no licence, reproducible by the two
                commands above and read from a mirror of their own)
-tests/         135 files, 4167 tests
+tests/         135 files, 4201 tests
 e2e/           demo, wasm physics, particles, soft, the UE level's digest, the
                arm lab (WebGL); shared device and the GPU halves of particles and
                soft (WebGPU)
