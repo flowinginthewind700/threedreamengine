@@ -167,13 +167,13 @@ The long form — every layer, solver, gate and measurement — lives in
 
 ## Demos / 演示页
 
-Eight pages, served in-site at
+Ten pages, served in-site at
 [robotworld.top/threedream](https://robotworld.top/zh/threedream); the bundle
 they run is the one `npm run build:inpage` writes after `npm run gate` has passed
 every check. Each one exists to measure a claim rather than to illustrate it: the
 numbers in the sidebars are read off the running engine.
 
-一共八个页面，站内由
+一共十个页面，站内由
 [robotworld.top/threedream](https://robotworld.top/zh/threedream) 提供；它们跑的那份
 产物，是 `npm run gate` 把每一道关卡都跑绿之后由 `build:inpage` 写出来的。每个页面
 存在的理由都是把一条结论量出来，而不是画个示意：侧栏里的数字都是从正在运行的引擎里
@@ -181,34 +181,38 @@ numbers in the sidebars are read off the running engine.
 
 | Page | Live | What it measures |
 |---|---|---|
-| Trainer | [index](https://robotworld.top/threedream/app/) | A policy-gradient learner training in the page, on `DriveEnv` and `ReachEnv`. |
+| Trainer | [index.html](https://robotworld.top/threedream/app/index.html) | A policy-gradient learner training in the page, on `DriveEnv` and `ReachEnv`. |
 | Physics check | [physics-check.html](https://robotworld.top/threedream/app/physics-check.html) | One canonical scene through `builtin`, `wasm` and a wasm replay, digests compared in your own browser. |
 | Shared device | [shared-device.html](https://robotworld.top/threedream/app/shared-device.html) | A single `GPUDevice` backing three.js rendering and a raw WGSL compute pipeline at the same time. |
 | Particles | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k-100k particles: the tier the browser granted, blit or CPU upload, draw calls, hash overflow. |
 | Soft bodies | [soft.html](https://robotworld.top/threedream/app/soft.html) | Cloth / sheets / cube / rope up to 20k nodes: islands, color batches, dispatches a step, the race-free flag, max stretch. |
+| Ocean | [ocean.html](https://robotworld.top/threedream/app/ocean.html) | A JONSWAP sea on the shared device: four cascades of one spectrum transformed in WGSL, the drawn grid displaced from a field mapped back, and `heightAt()` answering a buoyancy query from that same surface. |
 | Shooter | [fps.html](https://robotworld.top/threedream/app/fps.html) | A first-person match: a trained pursuit policy drives the bots through the same fixed-step ECS, you drive the rifle, and the backend picker swaps `builtin` / `wasm` / `rapier` under a live round. |
 | UE level | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | An Unreal 5.5 project's own level, meshes, material graphs, data assets and `SoundWave`s, walked and heard in the browser; a 600-step scripted run publishes a digest pinned against the same match in bare Node. |
+| UE town | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | An imported 3,571-actor Unreal map, read out of its own `.umap` and a content pack the project does not ship: 3,283 placements standing, 101 naming mesh packages no reachable pack carries, and a landscape whose heightmap grid is parsed but whose pixels are not decoded yet, so the ground holds where props cover it and not where it does not. |
 | Arm lab | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | A real SO-101 workcell: an expert flies the take, a policy trained in the page flies it back, and both kernels agree with the same episode in bare Node on control steps, physics steps and where the block ends up. |
 
 | 页面 | 线上 | 量的是什么 |
 |---|---|---|
-| 训练页 | [index](https://robotworld.top/threedream/app/) | 在页面里实时训练的策略梯度学习器，任务是 `DriveEnv` 与 `ReachEnv`。 |
+| 训练页 | [index.html](https://robotworld.top/threedream/app/index.html) | 在页面里实时训练的策略梯度学习器，任务是 `DriveEnv` 与 `ReachEnv`。 |
 | 确定性检查 | [physics-check.html](https://robotworld.top/threedream/app/physics-check.html) | 同一个规范场景跑 `builtin`、`wasm` 与一次 wasm 回放，在你自己的浏览器里比对摘要。 |
 | 共享设备 | [shared-device.html](https://robotworld.top/threedream/app/shared-device.html) | 同一个 `GPUDevice` 同时支撑 three.js 渲染与一条裸 WGSL compute pipeline。 |
 | 粒子 | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k–100k 粒子：浏览器实际给了哪个档位、走 blit 还是 CPU 上传、draw call 数、哈希溢出数。 |
 | 软体 | [soft.html](https://robotworld.top/threedream/app/soft.html) | 布料 / 多片布 / 立方体 / 绳，最多 2 万节点：island 数、着色批次数、每步 dispatch 数、无竞争标志、最大拉伸。 |
+| 海洋 | [ocean.html](https://robotworld.top/threedream/app/ocean.html) | 共享设备上的 JONSWAP 海面：同一条谱的四级 cascade 在 WGSL 里变换，画出来的网格取自映射回来的场，`heightAt()` 的浮力查询答的是同一个面。 |
 | 射击 | [fps.html](https://robotworld.top/threedream/app/fps.html) | 一场第一人称对局：训练好的 pursuit 策略跑在同一个固定步长 ECS 里驱动 bots，你操控步枪，后端选择器可以在进行中的对局下切换 `builtin` / `wasm` / `rapier`。 |
 | UE 关卡 | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | 一个 Unreal 5.5 工程自己的关卡、网格、材质图、数据资产与 `SoundWave`，在浏览器里走起来也听得到；600 步脚本对局发布一个摘要，与裸 Node 里同一场对局的参照值比对。 |
+| UE 城镇 | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | 一张导入的、有 3571 个 actor 的 Unreal 地图，读的是它自己的 `.umap`，加上一个工程并不自带的资源包：3283 个摆放立起来了，101 个指向任何可达资源包里都没有的网格包，地形的 heightmap 解析出了网格但像素还没解码，所以地面只在道具盖住的地方站得住。 |
 | 机械臂 | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | 一台真实的 SO-101 工作台：专家先飞一遍演示，页面里训练出的策略再把它飞回去；两个内核在控制步数、物理步数与方块最终落点上，都与裸 Node 里的同一段 episode 一致。 |
 
 Every page carries the same nav strip, generated from the page list the build
-reads, so arriving on any one of them shows the other seven. The screenshots here
+reads, so arriving on any one of them shows the other nine. The screenshots here
 and the share cards are real captures of these pages, each gated on the page's
 own report first: a capture that silently fell back to a worse tier fails the
 run rather than shipping under a caption it does not earn.
 
 每个页面都带同一条导航条，由构建读取的同一份页面清单生成，所以落在任意一页都能看到
-其余七页。这里与分享卡片用的截图都是这些页面的真实抓取，每张都先过页面自己报告的那
+其余九页。这里与分享卡片用的截图都是这些页面的真实抓取，每张都先过页面自己报告的那
 一关：真回退到更差档位的抓取会让脚本失败，而不是顶着一句它配不上的说明发出去。
 
 ![the trainer page, mid-training](docs/demo-drive.jpg)
@@ -230,12 +234,28 @@ the frame was copied on the device and never crossed the bus.*
 on the device three.js renders with.*
 *2 万软体节点分成四片布，在 three.js 渲染所用的设备上用着色的约束批次求解。*
 
+![the ocean page, a 256-texel JONSWAP sea on the shared device](docs/demo-ocean.jpg)
+
+*A 256-texel JONSWAP sea: four cascades transformed on the device three.js
+renders with, the grid displaced from a field mapped back, and the drawn surface
+agreeing with `heightAt()` to the rounding of a float32 position attribute.*
+*256 texel 的 JONSWAP 海面：四级 cascade 在 three.js 渲染所用的设备上变换，网格顶点取自
+映射回来的场，画出来的面与 `heightAt()` 的查询只差一个 float32 位置属性的舍入。*
+
 ![a live round on the shooter page, four policy-driven bots up](docs/demo-fps.jpg)
 
 *A live round: the bots run one pursuit policy trained in this repo, through
 the same hitscan the player fires.*
 *一场实时对局：bots 跑的是本仓库训练出的一个 pursuit 策略，走的是和玩家同一套
 hitscan。*
+
+![the imported Unreal town, 3,283 of its 3,571 actors standing](docs/demo-ue-town.jpg)
+
+*The imported town: 3,283 of 3,571 actors resolved out of a project's own
+`.umap` plus a pack it does not ship, and the page lists what the other 101
+named and what the terrain still owes beside them.*
+*导入的城镇：3571 个 actor 里有 3283 个是从工程自己的 `.umap` 加上一个它并不自带的
+资源包里解析出来的，剩下 101 个指向了什么、地形还欠着什么，页面上就写在它们旁边。*
 
 ![the arm lab page, a recorded take mid-transit](docs/demo-arm-lab.jpg)
 
@@ -250,28 +270,28 @@ speed, the red cube in the jaw on its way to the basket.*
 | 100,000 particles, one WebGPU step | 20-26 ms on an iGPU, median of 20 timed chunks |
 | 20,000-node soft body, one step | 3.9-6.3 ms, race-free by constraint coloring, no atomics |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 4,493 unit tests in 144 files, 67 browser tests, 68 Rust tests |
+| Tests | 5,231 unit tests in 167 files, 71 browser tests, 68 Rust tests |
 | Texture residency of a read-in UE level, 512 MiB budget | 2303.33 to 512.00 MiB across 380 maps: the budget filled to within 4.5 KiB, resolution spent instead of art, 2 maps pinned at 10.00 MiB |
 | A task document to a trained policy | 320 episodes headless, 0/20 untrained to 10/10, ~2.3 min |
-| Live pages | eight, in-site on robotworld.top, from a bundle built after every gate passed |
+| Live pages | ten, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
 |---|---|
 | 10 万粒子，一个 WebGPU 步 | iGPU 上 20–26 ms，20 个计时 chunk 的中位数 |
 | 2 万节点软体，一个步 | 3.9–6.3 ms，靠约束着色无竞争，不用原子操作 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 144 个文件 4,493 个单元测试、67 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 167 个文件 5,231 个单元测试、71 个浏览器测试、68 个 Rust 测试 |
 | 一张读进来的 UE 关卡的纹理驻留，512 MiB 预算 | 380 张图 2303.33 到 512.00 MiB：预算花到只差 4.5 KiB，花掉的是分辨率而不是画面，钉住的 2 张 10.00 MiB |
 | 一份任务文档到一个训练好的策略 | 无头 320 局，未训练 0/20 到 10/10，约 2.3 分钟 |
-| 线上页面 | 八个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
+| 线上页面 | 十个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
 
 ```bash
 npm install
-npm run dev       # the eight browser demos on http://localhost:5173
+npm run dev       # the ten browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 4,493 unit tests, no GPU needed
+npm test          # 5,231 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
 npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```
