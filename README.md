@@ -167,13 +167,13 @@ The long form — every layer, solver, gate and measurement — lives in
 
 ## Demos / 演示页
 
-Nine pages, served in-site at
+Eight pages, served in-site at
 [robotworld.top/threedream](https://robotworld.top/zh/threedream); the bundle
 they run is the one `npm run build:inpage` writes after `npm run gate` has passed
 every check. Each one exists to measure a claim rather than to illustrate it: the
 numbers in the sidebars are read off the running engine.
 
-一共九个页面，站内由
+一共八个页面，站内由
 [robotworld.top/threedream](https://robotworld.top/zh/threedream) 提供；它们跑的那份
 产物，是 `npm run gate` 把每一道关卡都跑绿之后由 `build:inpage` 写出来的。每个页面
 存在的理由都是把一条结论量出来，而不是画个示意：侧栏里的数字都是从正在运行的引擎里
@@ -188,7 +188,6 @@ numbers in the sidebars are read off the running engine.
 | Soft bodies | [soft.html](https://robotworld.top/threedream/app/soft.html) | Cloth / sheets / cube / rope up to 20k nodes: islands, color batches, dispatches a step, the race-free flag, max stretch. |
 | Shooter | [fps.html](https://robotworld.top/threedream/app/fps.html) | A first-person match: a trained pursuit policy drives the bots through the same fixed-step ECS, you drive the rifle, and the backend picker swaps `builtin` / `wasm` / `rapier` under a live round. |
 | UE level | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | An Unreal 5.5 project's own level, meshes, material graphs, data assets and `SoundWave`s, walked and heard in the browser; a 600-step scripted run publishes a digest pinned against the same match in bare Node. |
-| Hall of fame | [lb-arena.html](https://robotworld.top/threedream/app/lb-arena.html) | The host site's model leaderboards as rooms you walk: one hall per capability, one staircase per board, a CC0 marble kit dressed from a manifest, and a shot that opens the model's card. |
 | Arm lab | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | A real SO-101 workcell: an expert flies the take, a policy trained in the page flies it back, and both kernels agree with the same episode in bare Node on control steps, physics steps and where the block ends up. |
 
 | 页面 | 线上 | 量的是什么 |
@@ -200,17 +199,16 @@ numbers in the sidebars are read off the running engine.
 | 软体 | [soft.html](https://robotworld.top/threedream/app/soft.html) | 布料 / 多片布 / 立方体 / 绳，最多 2 万节点：island 数、着色批次数、每步 dispatch 数、无竞争标志、最大拉伸。 |
 | 射击 | [fps.html](https://robotworld.top/threedream/app/fps.html) | 一场第一人称对局：训练好的 pursuit 策略跑在同一个固定步长 ECS 里驱动 bots，你操控步枪，后端选择器可以在进行中的对局下切换 `builtin` / `wasm` / `rapier`。 |
 | UE 关卡 | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | 一个 Unreal 5.5 工程自己的关卡、网格、材质图、数据资产与 `SoundWave`，在浏览器里走起来也听得到；600 步脚本对局发布一个摘要，与裸 Node 里同一场对局的参照值比对。 |
-| 名人堂 | [lb-arena.html](https://robotworld.top/threedream/app/lb-arena.html) | 把宿主站的模型榜单做成可以走进去的房间：一种能力一个展厅，一块榜一道阶梯，场景由一份带出处的 CC0 大理石 kit 布置，开一枪就翻开那个模型的卡片。 |
 | 机械臂 | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | 一台真实的 SO-101 工作台：专家先飞一遍演示，页面里训练出的策略再把它飞回去；两个内核在控制步数、物理步数与方块最终落点上，都与裸 Node 里的同一段 episode 一致。 |
 
 Every page carries the same nav strip, generated from the page list the build
-reads, so arriving on any one of them shows the other eight. The screenshots here
+reads, so arriving on any one of them shows the other seven. The screenshots here
 and the share cards are real captures of these pages, each gated on the page's
 own report first: a capture that silently fell back to a worse tier fails the
 run rather than shipping under a caption it does not earn.
 
 每个页面都带同一条导航条，由构建读取的同一份页面清单生成，所以落在任意一页都能看到
-其余八页。这里与分享卡片用的截图都是这些页面的真实抓取，每张都先过页面自己报告的那
+其余七页。这里与分享卡片用的截图都是这些页面的真实抓取，每张都先过页面自己报告的那
 一关：真回退到更差档位的抓取会让脚本失败，而不是顶着一句它配不上的说明发出去。
 
 ![the trainer page, mid-training](docs/demo-drive.jpg)
@@ -245,14 +243,6 @@ hitscan。*
 speed, the red cube in the jaw on its way to the basket.*
 *机械臂页的中途：页面自己录下的演示正在半速回放，红色方块夹在夹爪里，正送往篮子。*
 
-![the hall of fame, walked into: a staircase per board, rank one on the highest step](docs/demo-lb-arena.jpg)
-
-*The hall of fame: the host site's model leaderboards as rooms you walk. One
-hall per capability, one staircase per board, rank one on the highest step with
-a cup over its head; a shot opens the model's card.*
-*名人堂：把宿主站的模型榜单做成可以走进去的房间。一种能力一个展厅，一块榜一道阶梯，
-第一名站在最高的台阶上、奖杯悬在头顶；开一枪就翻开那个模型的卡片。*
-
 ## By the numbers / 关键数字
 
 | | |
@@ -263,7 +253,7 @@ a cup over its head; a shot opens the model's card.*
 | Tests | 4,493 unit tests in 144 files, 67 browser tests, 68 Rust tests |
 | Texture residency of a read-in UE level, 512 MiB budget | 2303.33 to 512.00 MiB across 380 maps: the budget filled to within 4.5 KiB, resolution spent instead of art, 2 maps pinned at 10.00 MiB |
 | A task document to a trained policy | 320 episodes headless, 0/20 untrained to 10/10, ~2.3 min |
-| Live pages | nine, in-site on robotworld.top, from a bundle built after every gate passed |
+| Live pages | eight, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
 |---|---|
@@ -273,13 +263,13 @@ a cup over its head; a shot opens the model's card.*
 | 测试 | 144 个文件 4,493 个单元测试、67 个浏览器测试、68 个 Rust 测试 |
 | 一张读进来的 UE 关卡的纹理驻留，512 MiB 预算 | 380 张图 2303.33 到 512.00 MiB：预算花到只差 4.5 KiB，花掉的是分辨率而不是画面，钉住的 2 张 10.00 MiB |
 | 一份任务文档到一个训练好的策略 | 无头 320 局，未训练 0/20 到 10/10，约 2.3 分钟 |
-| 线上页面 | 九个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
+| 线上页面 | 八个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
 
 ```bash
 npm install
-npm run dev       # the nine browser demos on http://localhost:5173
+npm run dev       # the eight browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
 npm test          # 4,493 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
