@@ -167,13 +167,13 @@ The long form — every layer, solver, gate and measurement — lives in
 
 ## Demos / 演示页
 
-Ten pages, served in-site at
+Eleven pages, served in-site at
 [robotworld.top/threedream](https://robotworld.top/zh/threedream); the bundle
 they run is the one `npm run build:inpage` writes after `npm run gate` has passed
 every check. Each one exists to measure a claim rather than to illustrate it: the
 numbers in the sidebars are read off the running engine.
 
-一共十个页面，站内由
+一共十一个页面，站内由
 [robotworld.top/threedream](https://robotworld.top/zh/threedream) 提供；它们跑的那份
 产物，是 `npm run gate` 把每一道关卡都跑绿之后由 `build:inpage` 写出来的。每个页面
 存在的理由都是把一条结论量出来，而不是画个示意：侧栏里的数字都是从正在运行的引擎里
@@ -190,7 +190,7 @@ numbers in the sidebars are read off the running engine.
 | Island | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | One ground format, two provenances: a 2,048-metre heightfield generated in this repository lands in the same structure an imported Unreal landscape decodes into, and the drawn mesh, the walk and the hitscan read the two without telling them apart. |
 | Shooter | [fps.html](https://robotworld.top/threedream/app/fps.html) | A first-person match: a trained pursuit policy drives the bots through the same fixed-step ECS, you drive the rifle, and the backend picker swaps `builtin` / `wasm` / `rapier` under a live round. |
 | UE level | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | An Unreal 5.5 project's own level, meshes, material graphs, data assets and `SoundWave`s, walked and heard in the browser; a 600-step scripted run publishes a digest pinned against the same match in bare Node. |
-| UE town | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | An imported 3,571-actor Unreal map, read out of its own `.umap` and a content pack the project does not ship: 3,283 placements standing, 101 naming mesh packages no reachable pack carries, and a landscape whose Oodle-compressed heightmap is decoded into a walked surface -- the ground climbs, refuses steep slopes and stops a hitscan like any collider, and wears maps named in the open where the project's own material was never exported. |
+| UE town | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | An imported 3,571-actor Unreal map, read out of its own `.umap` and a content pack the project does not ship: 3,283 placements standing; a landscape whose Oodle-compressed heightmap is decoded into a walked surface -- the ground climbs, refuses steep slopes and stops a hitscan like any collider; and the 101 actors that name a mesh no reachable pack carries, each one closed with a labelled substitute measured off the neighbours the project does ship, so a wall reads as a wall with a window in it rather than as a wall with a hole, and the page lists every substitute beside what it stands in for. |
 | Arm lab | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | A real SO-101 workcell: an expert flies the take, a policy trained in the page flies it back, and both kernels agree with the same episode in bare Node on control steps, physics steps and where the block ends up. |
 
 | 页面 | 线上 | 量的是什么 |
@@ -204,7 +204,7 @@ numbers in the sidebars are read off the running engine.
 | 岛屿 | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | 同一种地面格式、两种来源：本仓库生成的 2,048 米高度场落进与导入 Unreal 地形解码后完全相同的结构里，画网格的、走地的、停 hitscan 的三个读者分不出两者。 |
 | 射击 | [fps.html](https://robotworld.top/threedream/app/fps.html) | 一场第一人称对局：训练好的 pursuit 策略跑在同一个固定步长 ECS 里驱动 bots，你操控步枪，后端选择器可以在进行中的对局下切换 `builtin` / `wasm` / `rapier`。 |
 | UE 关卡 | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | 一个 Unreal 5.5 工程自己的关卡、网格、材质图、数据资产与 `SoundWave`，在浏览器里走起来也听得到；600 步脚本对局发布一个摘要，与裸 Node 里同一场对局的参照值比对。 |
-| UE 城镇 | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | 一张导入的、有 3571 个 actor 的 Unreal 地图，读的是它自己的 `.umap`，加上一个工程并不自带的资源包：3283 个摆放立起来了，101 个指向任何可达资源包里都没有的网格包；地形的 Oodle 压缩 heightmap 已解成一张走得上去的面 —— 能爬、会拒绝太陡的坡、停得住 hitscan，工程自身材质未曾导出的地方穿什么贴图在明处写明。 |
+| UE 城镇 | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | 一张导入的、有 3571 个 actor 的 Unreal 地图，读的是它自己的 `.umap`，加上一个工程并不自带的资源包：3283 个摆放立起来了；地形的 Oodle 压缩 heightmap 已解成一张走得上去的面 —— 能爬、会拒绝太陡的坡、停得住 hitscan；剩下 101 个指向任何可达资源包里都没有的网格，每一个都由一个标注清楚的替补合上，尺寸量自工程确实随附的邻居网格，于是墙读起来是开着窗的墙，而不是破了洞的墙，页面上每个替补都写在它所替代的那一项旁边。 |
 | 机械臂 | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | 一台真实的 SO-101 工作台：专家先飞一遍演示，页面里训练出的策略再把它飞回去；两个内核在控制步数、物理步数与方块最终落点上，都与裸 Node 里的同一段 episode 一致。 |
 
 Every page carries the same nav strip, generated from the page list the build
@@ -262,10 +262,12 @@ hitscan。*
 ![the imported Unreal town, 3,283 of its 3,571 actors standing](docs/demo-ue-town.jpg)
 
 *The imported town: 3,283 of 3,571 actors resolved out of a project's own
-`.umap` plus a pack it does not ship, and the page lists what the other 101
-named and what the terrain still owes beside them.*
-*导入的城镇：3571 个 actor 里有 3283 个是从工程自己的 `.umap` 加上一个它并不自带的
-资源包里解析出来的，剩下 101 个指向了什么、地形还欠着什么，页面上就写在它们旁边。*
+`.umap` plus a pack it does not ship, its Oodle-compressed landscape decoded
+into ground the walk reads, and the other 101 closed with substitutes the page
+labels, measures and lists beside what each one stands in for.*
+*导入的城镇：3571 个 actor 里有 3283 个是从工程自己的 `.umap` 加上一个它并不自带的资源包
+里解析出来的，Oodle 压缩的地形解成了走地代码读的那张面，剩下 101 个由替补合上——页面标明
+它们的身份、量出它们的尺寸，并把每一个写在它所替代的那一项旁边。*
 
 ![the arm lab page, a recorded take mid-transit](docs/demo-arm-lab.jpg)
 
@@ -280,28 +282,28 @@ speed, the red cube in the jaw on its way to the basket.*
 | 100,000 particles, one WebGPU step | 20-26 ms on an iGPU, median of 20 timed chunks |
 | 20,000-node soft body, one step | 3.9-6.3 ms, race-free by constraint coloring, no atomics |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 5,231 unit tests in 167 files, 71 browser tests, 68 Rust tests |
+| Tests | 5,527 unit tests in 178 files, 73 browser tests, 68 Rust tests |
 | Texture residency of a read-in UE level, 512 MiB budget | 2303.33 to 512.00 MiB across 380 maps: the budget filled to within 4.5 KiB, resolution spent instead of art, 2 maps pinned at 10.00 MiB |
 | A task document to a trained policy | 320 episodes headless, 0/20 untrained to 10/10, ~2.3 min |
-| Live pages | ten, in-site on robotworld.top, from a bundle built after every gate passed |
+| Live pages | eleven, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
 |---|---|
 | 10 万粒子，一个 WebGPU 步 | iGPU 上 20–26 ms，20 个计时 chunk 的中位数 |
 | 2 万节点软体，一个步 | 3.9–6.3 ms，靠约束着色无竞争，不用原子操作 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 167 个文件 5,231 个单元测试、71 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 178 个文件 5,527 个单元测试、73 个浏览器测试、68 个 Rust 测试 |
 | 一张读进来的 UE 关卡的纹理驻留，512 MiB 预算 | 380 张图 2303.33 到 512.00 MiB：预算花到只差 4.5 KiB，花掉的是分辨率而不是画面，钉住的 2 张 10.00 MiB |
 | 一份任务文档到一个训练好的策略 | 无头 320 局，未训练 0/20 到 10/10，约 2.3 分钟 |
-| 线上页面 | 十个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
+| 线上页面 | 十一个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
 
 ```bash
 npm install
-npm run dev       # the ten browser demos on http://localhost:5173
+npm run dev       # the eleven browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 5,231 unit tests, no GPU needed
+npm test          # 5,527 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
 npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```
