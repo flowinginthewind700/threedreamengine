@@ -187,9 +187,10 @@ numbers in the sidebars are read off the running engine.
 | Particles | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k-100k particles: the tier the browser granted, blit or CPU upload, draw calls, hash overflow. |
 | Soft bodies | [soft.html](https://robotworld.top/threedream/app/soft.html) | Cloth / sheets / cube / rope up to 20k nodes: islands, color batches, dispatches a step, the race-free flag, max stretch. |
 | Ocean | [ocean.html](https://robotworld.top/threedream/app/ocean.html) | A JONSWAP sea on the shared device: four cascades of one spectrum transformed in WGSL, the drawn grid displaced from a field mapped back, and `heightAt()` answering a buoyancy query from that same surface. |
+| Island | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | One ground format, two provenances: a 2,048-metre heightfield generated in this repository lands in the same structure an imported Unreal landscape decodes into, and the drawn mesh, the walk and the hitscan read the two without telling them apart. |
 | Shooter | [fps.html](https://robotworld.top/threedream/app/fps.html) | A first-person match: a trained pursuit policy drives the bots through the same fixed-step ECS, you drive the rifle, and the backend picker swaps `builtin` / `wasm` / `rapier` under a live round. |
 | UE level | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | An Unreal 5.5 project's own level, meshes, material graphs, data assets and `SoundWave`s, walked and heard in the browser; a 600-step scripted run publishes a digest pinned against the same match in bare Node. |
-| UE town | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | An imported 3,571-actor Unreal map, read out of its own `.umap` and a content pack the project does not ship: 3,283 placements standing, 101 naming mesh packages no reachable pack carries, and a landscape whose heightmap grid is parsed but whose pixels are not decoded yet, so the ground holds where props cover it and not where it does not. |
+| UE town | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | An imported 3,571-actor Unreal map, read out of its own `.umap` and a content pack the project does not ship: 3,283 placements standing, 101 naming mesh packages no reachable pack carries, and a landscape whose Oodle-compressed heightmap is decoded into a walked surface -- the ground climbs, refuses steep slopes and stops a hitscan like any collider, and wears maps named in the open where the project's own material was never exported. |
 | Arm lab | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | A real SO-101 workcell: an expert flies the take, a policy trained in the page flies it back, and both kernels agree with the same episode in bare Node on control steps, physics steps and where the block ends up. |
 
 | 页面 | 线上 | 量的是什么 |
@@ -200,19 +201,20 @@ numbers in the sidebars are read off the running engine.
 | 粒子 | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k–100k 粒子：浏览器实际给了哪个档位、走 blit 还是 CPU 上传、draw call 数、哈希溢出数。 |
 | 软体 | [soft.html](https://robotworld.top/threedream/app/soft.html) | 布料 / 多片布 / 立方体 / 绳，最多 2 万节点：island 数、着色批次数、每步 dispatch 数、无竞争标志、最大拉伸。 |
 | 海洋 | [ocean.html](https://robotworld.top/threedream/app/ocean.html) | 共享设备上的 JONSWAP 海面：同一条谱的四级 cascade 在 WGSL 里变换，画出来的网格取自映射回来的场，`heightAt()` 的浮力查询答的是同一个面。 |
+| 岛屿 | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | 同一种地面格式、两种来源：本仓库生成的 2,048 米高度场落进与导入 Unreal 地形解码后完全相同的结构里，画网格的、走地的、停 hitscan 的三个读者分不出两者。 |
 | 射击 | [fps.html](https://robotworld.top/threedream/app/fps.html) | 一场第一人称对局：训练好的 pursuit 策略跑在同一个固定步长 ECS 里驱动 bots，你操控步枪，后端选择器可以在进行中的对局下切换 `builtin` / `wasm` / `rapier`。 |
 | UE 关卡 | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | 一个 Unreal 5.5 工程自己的关卡、网格、材质图、数据资产与 `SoundWave`，在浏览器里走起来也听得到；600 步脚本对局发布一个摘要，与裸 Node 里同一场对局的参照值比对。 |
-| UE 城镇 | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | 一张导入的、有 3571 个 actor 的 Unreal 地图，读的是它自己的 `.umap`，加上一个工程并不自带的资源包：3283 个摆放立起来了，101 个指向任何可达资源包里都没有的网格包，地形的 heightmap 解析出了网格但像素还没解码，所以地面只在道具盖住的地方站得住。 |
+| UE 城镇 | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | 一张导入的、有 3571 个 actor 的 Unreal 地图，读的是它自己的 `.umap`，加上一个工程并不自带的资源包：3283 个摆放立起来了，101 个指向任何可达资源包里都没有的网格包；地形的 Oodle 压缩 heightmap 已解成一张走得上去的面 —— 能爬、会拒绝太陡的坡、停得住 hitscan，工程自身材质未曾导出的地方穿什么贴图在明处写明。 |
 | 机械臂 | [arm-lab.html](https://robotworld.top/threedream/app/arm-lab.html) | 一台真实的 SO-101 工作台：专家先飞一遍演示，页面里训练出的策略再把它飞回去；两个内核在控制步数、物理步数与方块最终落点上，都与裸 Node 里的同一段 episode 一致。 |
 
 Every page carries the same nav strip, generated from the page list the build
-reads, so arriving on any one of them shows the other nine. The screenshots here
+reads, so arriving on any one of them shows the other ten. The screenshots here
 and the share cards are real captures of these pages, each gated on the page's
 own report first: a capture that silently fell back to a worse tier fails the
 run rather than shipping under a caption it does not earn.
 
 每个页面都带同一条导航条，由构建读取的同一份页面清单生成，所以落在任意一页都能看到
-其余九页。这里与分享卡片用的截图都是这些页面的真实抓取，每张都先过页面自己报告的那
+其余十页。这里与分享卡片用的截图都是这些页面的真实抓取，每张都先过页面自己报告的那
 一关：真回退到更差档位的抓取会让脚本失败，而不是顶着一句它配不上的说明发出去。
 
 ![the trainer page, mid-training](docs/demo-drive.jpg)
@@ -241,6 +243,14 @@ renders with, the grid displaced from a field mapped back, and the drawn surface
 agreeing with `heightAt()` to the rounding of a float32 position attribute.*
 *256 texel 的 JONSWAP 海面：四级 cascade 在 three.js 渲染所用的设备上变换，网格顶点取自
 映射回来的场，画出来的面与 `heightAt()` 的查询只差一个 float32 位置属性的舍入。*
+
+![the island page: a generated 2,048-metre heightfield, walked and ringed by the sea](docs/demo-tidewater.jpg)
+
+*The island in orbit: 131,072 triangles of one vertex-coloured mesh at stride 2,
+the same `heightAt()` under the character's feet as under the imported town's,
+and the ocean page's sea around it.*
+*轨道视角下的岛：一张顶点着色的网格、stride 2 上 131,072 个三角形；角色脚下与导入城镇脚下是
+同一个 `heightAt()`，四周是海洋页的那片海。*
 
 ![a live round on the shooter page, four policy-driven bots up](docs/demo-fps.jpg)
 
