@@ -21,7 +21,7 @@ names a file, that file is the specification it describes.
    in a browser produce the same simulation. The arithmetic is the engine's own
    too: `core/trig.ts` writes every transcendental ECMAScript leaves
    implementation-approximated, so a digest does not move when a host's libm does.
-   That is what makes a physics-AI kernel testable: all 4493 unit tests run
+    That is what makes a physics-AI kernel testable: all 6158 unit tests run
    without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
@@ -614,9 +614,9 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 4493 unit tests in 144 files, headless, no GPU needed | ~25s |
+| `npm test` | 6158 unit tests in 197 files, headless, no GPU needed | ~32s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
-| `npm run test:e2e` | 67 Playwright tests over 9 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~2.8 min |
+| `npm run test:e2e` | 81 Playwright tests over 13 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~6 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
 | `npm run check:wasm` | assertions over the shipped wasm kernel: ABI, provenance, behaviour | ~1s |
 | `node scripts/bench_gpu_particles.mjs` | the M3 ladder at 1k/10k/50k/100k particles, 160 steps a rung: per-step cost as p50/p95/mean over 20 chunk samples, draw calls, blit size | ~6s |
