@@ -294,10 +294,13 @@ speed, the red cube in the jaw on its way to the basket.*
 | 100,000 particles, one WebGPU step | 20-26 ms on an iGPU, median of 20 timed chunks |
 | 20,000-node soft body, one step | 3.9-6.3 ms, race-free by constraint coloring, no atomics |
 | 1,024 envs, one WebGPU dispatch | 0.18 ms of pipelined device time and 248 KiB resident on an iGPU, median of 20 timed chunks; 4,096 envs at 0.22 ms; 16,384 at 0.48 ms and 3.9 MiB, which is 29 ns an env-step against 2,295 ns on the CPU reference |
+| 8,192 envs, one CUDA step on an RTX 5090 | 0.560 ms of launches against 0.557 ms at 256 envs: the step does not get more expensive as the batch grows, so 8,192 rows come in at 14.6M env-steps/s, and the policy's sampler is bitwise identical to the host at every rung |
+| That device tier against the CPU reference | 4.19M row-steps at 8,192 envs, 600 of them outside 1e-4 in excursions of at most 131 steps, no episode mismatch: inside the boundary an f32 tier declares against an f64 reference |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 6,158 unit tests in 197 files, 81 browser tests, 68 Rust tests |
+| Tests | 6,451 unit tests in 204 files, 81 browser tests, 68 Rust tests |
 | Texture residency of a read-in UE level, 512 MiB budget | 2303.33 to 512.00 MiB across 380 maps: the budget filled to within 4.5 KiB, resolution spent instead of art, 2 maps pinned at 10.00 MiB |
 | A task document to a trained policy | 320 episodes headless, 0/20 untrained to 10/10, ~2.3 min |
+| That policy trained on the card, and served | 8,192 envs x 512 steps x 49 segments, 3.6 h on one RTX 5090 for 25,088 policy steps; the trunk scores 91.75% over 2,000 greedy episodes at seed 22, and the release measures the policy it would replace on that same ruler |
 | Live pages | twelve, in-site on robotworld.top, from a bundle built after every gate passed |
 
 | | |
@@ -305,10 +308,13 @@ speed, the red cube in the jaw on its way to the basket.*
 | 10 万粒子，一个 WebGPU 步 | iGPU 上 20–26 ms，20 个计时 chunk 的中位数 |
 | 2 万节点软体，一个步 | 3.9–6.3 ms，靠约束着色无竞争，不用原子操作 |
 | 1024 个环境，一次 WebGPU dispatch | iGPU 上 0.18 ms 的流水线设备时间、248 KiB 常驻，20 个计时 chunk 的中位数；4096 个 0.22 ms；16384 个 0.48 ms、3.9 MiB，一个 env-step 29 ns，而 CPU 参照是 2295 ns |
+| 8192 个环境，RTX 5090 上一次 CUDA step | 0.560 ms 的 launch，而 256 个环境时是 0.557 ms：这一步不随批量变大而变贵，于是 8192 行的吞吐是 14.6M env-steps/s，策略采样器在每一档都与宿主逐位一致 |
+| 这一设备档对着 CPU 参照 | 8192 个环境下 419 万个 row-step，其中 600 个在 1e-4 之外、excursion 最长 131 步，episode 计数零不一致：落在一档 f32 实现对着 f64 参照所声明的那个边界之内 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 197 个文件 6,158 个单元测试、81 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 204 个文件 6,451 个单元测试、81 个浏览器测试、68 个 Rust 测试 |
 | 一张读进来的 UE 关卡的纹理驻留，512 MiB 预算 | 380 张图 2303.33 到 512.00 MiB：预算花到只差 4.5 KiB，花掉的是分辨率而不是画面，钉住的 2 张 10.00 MiB |
 | 一份任务文档到一个训练好的策略 | 无头 320 局，未训练 0/20 到 10/10，约 2.3 分钟 |
+| 那枚策略，在卡上训练、线上在服务 | 8192 个环境 × 512 步 × 49 段，一张 RTX 5090 上 3.6 h、25088 个策略步；那枚 trunk 在 seed 22 上 2000 局 greedy 读出 91.75%，而发布对它要替换掉的那枚用的是同一把尺 |
 | 线上页面 | 十二个，robotworld.top 站内，产物出自一次全部关卡通过后的构建 |
 
 ## Quickstart / 快速开始
@@ -317,7 +323,7 @@ speed, the red cube in the jaw on its way to the basket.*
 npm install
 npm run dev       # the twelve browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 6,158 unit tests, no GPU needed
+npm test          # 6,451 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
 npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```

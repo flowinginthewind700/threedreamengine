@@ -21,7 +21,7 @@ names a file, that file is the specification it describes.
    in a browser produce the same simulation. The arithmetic is the engine's own
    too: `core/trig.ts` writes every transcendental ECMAScript leaves
    implementation-approximated, so a digest does not move when a host's libm does.
-    That is what makes a physics-AI kernel testable: all 6158 unit tests run
+    That is what makes a physics-AI kernel testable: all 6325 unit tests run
    without a GPU, and the wasm backend is
    held to the bits of the TypeScript solver it ports. The two GPU layers are held
    to a CPU reference the same way, and neither claims determinism for itself:
@@ -564,6 +564,107 @@ lerobot 又读出什么。同一只手写出来的两个实现会完美地互相
 产物 —— 一份 `PolicySnapshot`，或由它写出的 ONNX 图 —— 不带任何需要页面记得去应用的
 均值与标准差。
 
+### The batch tier and its ruler
+
+One environment is the shape a page wants and N of them at once is the shape a
+trainer wants, so the batch is a layer of its own rather than a loop around the
+first one. `src/envs/vector.ts` computes the layout a batch lives in -- flat
+typed buffers, plus the one integer function every backend derives its row seeds
+from -- and three backends read that layout: `vectorCpu.ts` walks N members of
+the ordinary `LearningEnvironment` contract in index order and is written to be
+obviously right rather than fast, `reachGpu.ts` steps all N rows in one WGSL
+dispatch on whatever device a browser grants, and `native/cuda/` compiles the
+same task, printed as CUDA C++ by `reachCuda.ts` from the tables the WGSL
+generator reads, for a card in another room. `reachReplay.ts` is what makes the
+third one judgeable at all: a backend that already finished on a machine
+elsewhere arrives as a recording of the actions it drew, and the ruler steps the
+reference on that stream rather than on one it invented.
+
+`compareVectorEnvs` is that ruler, and it reports a boundary rather than a
+tolerance, because a maximum deviation is a function of how many rows had a
+chance to produce one. Judged on 1e-4 alone, the same two tiers pass at 512 rows
+and fail at 1024 -- on the size of the batch, not on anything either did
+differently. So the comparison also counts excursions, a run of consecutive steps
+one row spends outside tolerance, and `DEVICE_TIER_BOUNDARY` states what a tier
+that integrates in f32 is allowed against the f64 reference: 1e-4 of deviation,
+256 steps in one excursion, 2e-3 of the row-steps outside. `withinBoundary` is
+false whatever the figures say when a flag, a counter or the presence of a value
+disagreed, or when an episode count did, because a boundary prices a rounding and
+not a fact.
+
+The excursion half exists because the deviation it prices is a branch rather than
+a rounding. Where the two tiers straddle a contact surface they take different
+branches for one step -- one bounces, the other does not -- and the observation
+parts by the impact speed, which is orders of magnitude wider than an ulp and
+which no tolerance can cover without also covering a real error. Measured on an
+RTX 5090 over the reach task at 512 steps: nothing at 512 rows and below, 101
+row-steps of 524,288 at 1024 rows in two excursions of 41 and 60 steps, 237 of
+2,097,152 at 4096 in four, and 600 of 4,194,304 at 8192 in ten, the longest run
+at those three rungs 60, 105 and 131 steps. The channel that parts is the
+agent's planar velocity; the one run at 8192 that peaked elsewhere peaked a
+fifth above tolerance in `toGoalZ`, a unit direction whose normalize guard sits
+on the far side of zero, which is the same kind of branch and a smaller one.
+Runs come back two ways: both tiers at rest against the same contact, or a
+respawn re-seeding the row from an episode counter both sides agreed on -- which
+is why the allowed length is a step count above the task's own horizon rather
+than an unbounded one. One row at 4096 had not come back when the comparison
+stopped, having left on step 487 of 512; it is reported open rather than judged,
+its 25 steps inside the 256 allowed however it is read. Between the runs the two
+tiers sit close: of the 524,187 row-steps that agreed at 1024 rows, 99.98% are
+at or below 1e-5 and the worst is 8.6e-5. That is what carrying a state in f32
+costs, and it is the measurement the boundary's 1e-4 sits one decade above.
+
+A step on the card does not get more expensive as the batch grows, which is the
+answer to how deep a batch should be cut: 0.557 ms of launches at 256 rows and
+0.560 ms at 8192, the policy's own sampling 0.542 ms of either, so this tier is
+launch-bound rather than compute-bound and 8192 rows come in at 14.6M
+env-steps/s. What does grow is the trip home -- 11.5 ms of readback at 256 rows,
+45.4 at 1024, 177 at 4096, 363 at 8192 -- and the residency behind it, 20 MB to
+640 MB. Depth is therefore a question about how often a run is willing to bring a
+segment back and about the card's memory, not one about the arithmetic; the
+sampler is bitwise identical to the host policy at every rung, so nothing was
+traded for it.
+
+一个环境是页面要的形状，N 个环境一起是训练要的形状，所以批量是自己的一层，而不是绕着第一个
+环境写的一个循环。`src/envs/vector.ts` 算出一个批量所住的那个布局 —— 扁平的类型化缓冲，加上
+每一个后端都从它推出自己那些行 seed 的那一个整数函数 —— 三个后端读这个布局：`vectorCpu.ts`
+按索引顺序走完 N 个普通的 `LearningEnvironment` 契约成员，写它是为了显然正确而不是为了快；
+`reachGpu.ts` 用一次 WGSL dispatch 把 N 行全部推进一步，跑在浏览器交出来的那块设备上；
+`native/cuda/` 则把同一个任务编译起来（由 `reachCuda.ts` 从 WGSL 生成器读的那批表打印成
+CUDA C++），跑在另一间屋子的卡上。让第三个也能被判的是 `reachReplay.ts`：一个已经在别处机器上
+跑完的后端，是以「它自己抽出的那串动作」的录制形式到达的，尺子于是拿这串流去推参照，而不是拿
+它自己编的一串。
+
+`compareVectorEnvs` 就是那把尺子，而它报的是一个边界，不是一个容差，因为最大偏差是「有多少行
+有机会产生一次偏差」的函数。只按 1e-4 判，同样这两档在 512 行过、在 1024 行不过 —— 差的是批次
+的大小，不是两边中任何一边做了什么不一样的事。所以这次比较还数 excursion：一行在容差之外连续
+待了多少步；而 `DEVICE_TIER_BOUNDARY` 写的就是一档以 f32 积分的实现对着 f64 参照被允许的东西：
+偏差 1e-4、单次 excursion 256 步、容差之外的 row-step 占 2e-3。只要有一个 flag、一个计数器、
+一个值的有无不同意，或者 episode 计数不同意，`withinBoundary` 就是 false，无论那些数字多好看
+—— 边界给一次舍入定价，不给一个事实定价。
+
+excursion 这一半存在，是因为它要定价的那个偏差是一次分支，不是一次舍入。两档正好跨在一个接触面
+两侧时，它们会在某一步走上不同的分支 —— 一边弹起来，另一边没有 —— 于是观测按撞击速度分开，比
+一个 ulp 宽出几个数量级，而任何盖得住它的容差同时也盖得住一个真错误。在 RTX 5090 上按 reach
+任务 512 步量出来的是：512 行及以下一次都没有；1024 行时 524,288 个 row-step 里有 101 个在外面，
+分成两次 excursion，41 步与 60 步；4096 行时 2,097,152 里有 237 个，分成四次；8192 行时
+4,194,304 里有 600 个，分成十次；这三档最长的那一次分别是 60、105、131 步。分开的那个通道是
+agent 的平面速度；8192 那一档里唯一一次在别处见顶的，是在 `toGoalZ` 上高出容差五分之一 —— 一个
+单位方向，它的 normalize 保护正好落在零的另一侧，同一类分支，只是小一些。excursion 回来有两种
+方式：两档都静止在同一个接触面上，或者 respawn 按两边都同意的 episode 计数器把那行重新播种 ——
+这正是允许长度取「比任务自己的 horizon 高一截的步数」而不是取无穷的原因。4096 那一档有一行在
+比较停下来时还没有回来，它是在 512 步里的第 487 步离开的；这一行按 open 报出来，不参与判定，
+它那 25 步无论怎么读都在允许的 256 步之内。两次 excursion 之间两档贴得很近：1024 行时那
+524,187 个一致的 row-step 里，99.98% 在 1e-5 及以下，最差的一个是 8.6e-5。这就是把一份状态用
+f32 拿着的代价，也正是边界那个 1e-4 高出它一个数量级的那次测量。
+
+卡上一步的成本不随批量变大而变贵，这就是「批量该切多深」的答案：256 行时 0.557 ms 的 launch，
+8192 行时 0.560 ms，两边策略自己的采样都占掉其中的 0.542 ms —— 这一档是 launch-bound，不是
+compute-bound，于是 8192 行的吞吐是 14.6M env-steps/s。真正长大的是回家那一趟：readback 在
+256 行是 11.5 ms、1024 行 45.4、4096 行 177、8192 行 363，以及它背后的常驻，20 MB 到
+640 MB。所以深度是一道「一趟运行愿意隔多久把一段搬回来一次」加上「卡上有多少显存」的题，不是一道
+算术题；而采样器在每一档都与宿主策略逐位一致，所以这个深度没有拿任何东西去换。
+
 ## Headless training
 
 ```bash
@@ -614,7 +715,7 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~4 min / ~3.5 min |
-| `npm test` | 6158 unit tests in 197 files, headless, no GPU needed | ~32s |
+| `npm test` | 6325 unit tests in 201 files, headless, no GPU needed | ~36s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~31s |
 | `npm run test:e2e` | 81 Playwright tests over 13 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU | ~6 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
@@ -624,6 +725,9 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | `npx tsx scripts/bench_cpu_soft.ts` | the same M4 ladder on the fallback tier: `softCpu.ts`, single-threaded, no GPU, p50/p95 a step at 1k-20k nodes and a fitted us/node | ~10s |
 | `npm run sim-env` | compose a task document against a machine and a level and run it headless: the sizes a policy is built at, how much of a level came and how much was pruned, every note the composition settled for, the cost of one control step, and with `--episodes n` a training run and a greedy score after it | 1.5s to measure / ~2.3 min for 320 episodes |
 | `npm run bench:env` | the env factory's two ladders: one instance over a growing world (1/8/32 loose bodies) timed against MuJoCo WASM compiled from the same composed scene, and a fleet of independent envs (1-8) stepped round-robin for the linearity M11 stands on | ~1.5 min |
+| `npm run bench:vector` | the batch tier's ladder on whatever device this machine has: 64 to 16384 rows, the CPU reference, the device and the pipelined dispatch as p50/p95/mean over 20 timed chunks, the bytes resident, and the per-env-step figure at both ends of the ladder | ~6s |
+| `npm run cuda:trajectory` | one reach trajectory on a card in another room: stage the generated CUDA C++ and the task's own parameters, syntax-check both against the host headers, build for the arch the card reports, run it in a container, bring the recording home and judge it with the same ruler that judges every other tier | ~15s a run, needs the GPU host |
+| `npm run cuda:train` | the same trip with the policy's sampler on the card: draw a segment there, judge the sampler against the host policy and the environment against `DEVICE_TIER_BOUNDARY`, then learn from the segment on the host and write the trunk it moved in both formats a reader takes | ~40s at 256 rows x 512 steps, ~10 min at 8192, needs the GPU host |
 | `npx tsx scripts/profile_boot.ts` | what one page boot costs, from four sources no single one of which can see all of it: the heap curve and its allocation floor from CDP `Performance.getMetrics`, the GC pause distribution from a `v8` trace, the frames of the load itself from a sampler installed before any page code runs, and the bytes left resident on the GPU and wasm sides. `--runs n` reports the median and the spread across boots, `--measure ms` bounds how long the page gets to finish counting its own scene, `--query k=v` (repeatable) carries the page's own switches into the boot it measures, so `?texbudget=512` is a measured page and not a described one | ~1.5 min a boot on `ue-fps ?level=mainmap`, ~4.5 min for three |
 | `npm run diagrams` / `npm run diagrams:check` | rasterise `docs/diagrams/*.svg` to the committed PNGs, or gate them against the manifest's hashes | ~5s / ~0s |
 | `node scripts/capture_shots.mjs` | the screenshots in the README and the share cards: 14 captures of the built pages served at their deployment subpath, each gated on the page's own tier report | ~40s |
