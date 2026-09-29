@@ -715,9 +715,9 @@ and `tests/tdd.test.ts` fails the build the moment a new module lands without on
 | Command | What it runs | Cost |
 |---|---|---|
 | `npm run gate` | every gate below in one serial, fail-fast run; `gate:fast` drops the coverage pass and the wasm rebuild | ~12 min / ~11 min, and ~10 min of either is the browser suite |
-| `npm test` | 6488 unit tests in 205 files, headless, no GPU needed | ~54s |
+| `npm test` | 6596 unit tests in 207 files, headless, no GPU needed | ~54s |
 | `npm run test:coverage` | same suite under v8, floor enforced by `vitest.config.ts` | ~66s |
-| `npm run test:e2e` | 81 Playwright tests over 13 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU. 68 pass and 13 skip here, the skipped ones being the no-adapter paths, which only run on a host that has no WebGPU device | ~10 min |
+| `npm run test:e2e` | 87 Playwright tests over 14 specs, two projects: SwiftShader WebGL2 and ANGLE/Vulkan WebGPU. 74 pass and 13 skip here, the skipped ones being the no-adapter paths, which only run on a host that has no WebGPU device | ~10 min |
 | `npm run test:rust` | 68 native Rust tests for the solver | ~1s warm |
 | `npm run check:wasm` | assertions over the shipped wasm kernel: ABI, provenance, behaviour | ~1s |
 | `node scripts/bench_gpu_particles.mjs` | the M3 ladder at 1k/10k/50k/100k particles, 160 steps a rung: per-step cost as p50/p95/mean over 20 chunk samples, draw calls, blit size | ~6s |

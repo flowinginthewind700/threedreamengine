@@ -190,7 +190,7 @@ numbers in the sidebars are read off the running engine.
 | Particles | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k-100k particles: the tier the browser granted, blit or CPU upload, draw calls, hash overflow. |
 | Soft bodies | [soft.html](https://robotworld.top/threedream/app/soft.html) | Cloth / sheets / cube / rope up to 20k nodes: islands, color batches, dispatches a step, the race-free flag, max stretch. |
 | Ocean | [ocean.html](https://robotworld.top/threedream/app/ocean.html) | A JONSWAP sea on the shared device: four cascades of one spectrum transformed in WGSL, the drawn grid displaced from a field mapped back, and `heightAt()` answering a buoyancy query from that same surface. |
-| Island | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | One ground format, two provenances: a 2,048-metre heightfield generated in this repository lands in the same structure an imported Unreal landscape decodes into, and the drawn mesh, the walk and the hitscan read the two without telling them apart. |
+| Island | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | One ground format, two provenances: a 2,048-metre heightfield generated in this repository lands in the same structure an imported Unreal landscape decodes into, and the drawn mesh, the walk and the hitscan read the two without telling them apart. A spectator flies the same island on `USpectatorPawnMovement`'s own numbers, and the ground stops it for the reason the `Spectator` collision profile gives. |
 | Shooter | [fps.html](https://robotworld.top/threedream/app/fps.html) | A first-person match: a trained pursuit policy drives the bots through the same fixed-step ECS, you drive the rifle, and the backend picker swaps `builtin` / `wasm` / `rapier` under a live round. |
 | UE level | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | An Unreal 5.5 project's own level, meshes, material graphs, data assets and `SoundWave`s, walked and heard in the browser; a 600-step scripted run publishes a digest pinned against the same match in bare Node. |
 | UE town | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | An imported 3,571-actor Unreal map, read out of its own `.umap` and a content pack the project does not ship: 3,283 placements standing; a landscape whose Oodle-compressed heightmap is decoded into a walked surface -- the ground climbs, refuses steep slopes and stops a hitscan like any collider; and the 101 actors that name a mesh no reachable pack carries, each one closed with a labelled substitute measured off the neighbours the project does ship, so a wall reads as a wall with a window in it rather than as a wall with a hole, and the page lists every substitute beside what it stands in for. |
@@ -205,7 +205,7 @@ numbers in the sidebars are read off the running engine.
 | 粒子 | [particles.html](https://robotworld.top/threedream/app/particles.html) | 1k–100k 粒子：浏览器实际给了哪个档位、走 blit 还是 CPU 上传、draw call 数、哈希溢出数。 |
 | 软体 | [soft.html](https://robotworld.top/threedream/app/soft.html) | 布料 / 多片布 / 立方体 / 绳，最多 2 万节点：island 数、着色批次数、每步 dispatch 数、无竞争标志、最大拉伸。 |
 | 海洋 | [ocean.html](https://robotworld.top/threedream/app/ocean.html) | 共享设备上的 JONSWAP 海面：同一条谱的四级 cascade 在 WGSL 里变换，画出来的网格取自映射回来的场，`heightAt()` 的浮力查询答的是同一个面。 |
-| 岛屿 | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | 同一种地面格式、两种来源：本仓库生成的 2,048 米高度场落进与导入 Unreal 地形解码后完全相同的结构里，画网格的、走地的、停 hitscan 的三个读者分不出两者。 |
+| 岛屿 | [tidewater.html](https://robotworld.top/threedream/app/tidewater.html) | 同一种地面格式、两种来源：本仓库生成的 2,048 米高度场落进与导入 Unreal 地形解码后完全相同的结构里，画网格的、走地的、停 hitscan 的三个读者分不出两者。观者相机用 `USpectatorPawnMovement` 自己的那组数字飞过同一座岛，而地面拦住它的理由，正是 `Spectator` 碰撞配置写下的那一条。 |
 | 射击 | [fps.html](https://robotworld.top/threedream/app/fps.html) | 一场第一人称对局：训练好的 pursuit 策略跑在同一个固定步长 ECS 里驱动 bots，你操控步枪，后端选择器可以在进行中的对局下切换 `builtin` / `wasm` / `rapier`。 |
 | UE 关卡 | [ue-fps.html](https://robotworld.top/threedream/app/ue-fps.html) | 一个 Unreal 5.5 工程自己的关卡、网格、材质图、数据资产与 `SoundWave`，在浏览器里走起来也听得到；600 步脚本对局发布一个摘要，与裸 Node 里同一场对局的参照值比对。 |
 | UE 城镇 | [ue-town.html](https://robotworld.top/threedream/app/ue-town.html) | 一张导入的、有 3571 个 actor 的 Unreal 地图，读的是它自己的 `.umap`，加上一个工程并不自带的资源包：3283 个摆放立起来了；地形的 Oodle 压缩 heightmap 已解成一张走得上去的面 —— 能爬、会拒绝太陡的坡、停得住 hitscan；剩下 101 个指向任何可达资源包里都没有的网格，每一个都由一个标注清楚的替补合上，尺寸量自工程确实随附的邻居网格，于是墙读起来是开着窗的墙，而不是破了洞的墙，页面上每个替补都写在它所替代的那一项旁边。 |
@@ -300,7 +300,7 @@ speed, the red cube in the jaw on its way to the basket.*
 | 8,192 envs, one CUDA step on an RTX 5090 | 0.560 ms of launches against 0.557 ms at 256 envs: the step does not get more expensive as the batch grows, so 8,192 rows come in at 14.6M env-steps/s, and the policy's sampler is bitwise identical to the host at every rung |
 | That device tier against the CPU reference | 4.19M row-steps at 8,192 envs, 600 of them outside 1e-4 in excursions of at most 131 steps, no episode mismatch: inside the boundary an f32 tier declares against an f64 reference |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 6,488 unit tests in 205 files, 81 browser tests, 68 Rust tests |
+| Tests | 6,596 unit tests in 207 files, 87 browser tests, 68 Rust tests |
 | Texture residency of a read-in UE level, 512 MiB budget | 2303.33 to 512.00 MiB across 380 maps: the budget filled to within 4.5 KiB, resolution spent instead of art, 2 maps pinned at 10.00 MiB |
 | A task document to a trained policy | 320 headless episodes, 38,168 control steps, then the release ruler — 2,000 greedy episodes over a composition the run never trained in: 0% to 21% success, mean gap to the basket 0.299 m to 0.125 m. 26.4 min for that command, and the ruler by itself is 18.7 min on this world |
 | That policy trained on the card, and served | 8,192 envs x 512 steps x 49 segments, 3.6 h on one RTX 5090 for 25,088 policy steps; the trunk scores 91.75% over 2,000 greedy episodes at seed 22, and the release measures the policy it would replace on that same ruler |
@@ -314,7 +314,7 @@ speed, the red cube in the jaw on its way to the basket.*
 | 8192 个环境，RTX 5090 上一次 CUDA step | 0.560 ms 的 launch，而 256 个环境时是 0.557 ms：这一步不随批量变大而变贵，于是 8192 行的吞吐是 14.6M env-steps/s，策略采样器在每一档都与宿主逐位一致 |
 | 这一设备档对着 CPU 参照 | 8192 个环境下 419 万个 row-step，其中 600 个在 1e-4 之外、excursion 最长 131 步，episode 计数零不一致：落在一档 f32 实现对着 f64 参照所声明的那个边界之内 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 205 个文件 6,488 个单元测试、81 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 207 个文件 6,596 个单元测试、87 个浏览器测试、68 个 Rust 测试 |
 | 一张读进来的 UE 关卡的纹理驻留，512 MiB 预算 | 380 张图 2303.33 到 512.00 MiB：预算花到只差 4.5 KiB，花掉的是分辨率而不是画面，钉住的 2 张 10.00 MiB |
 | 一份任务文档到一个训练好的策略 | 无头 320 局、38168 个 control step，然后是发布那把尺 —— 2000 局 greedy，跑在一个训练从未碰过的组合上：成功率 0% 到 21%，到篮子口的平均距离 0.299 m 到 0.125 m。那条命令 26.4 分钟，而这把尺单独在这个世界上跑一次是 18.7 分钟 |
 | 那枚策略，在卡上训练、线上在服务 | 8192 个环境 × 512 步 × 49 段，一张 RTX 5090 上 3.6 h、25088 个策略步；那枚 trunk 在 seed 22 上 2000 局 greedy 读出 91.75%，而发布对它要替换掉的那枚用的是同一把尺 |
@@ -326,7 +326,7 @@ speed, the red cube in the jaw on its way to the basket.*
 npm install
 npm run dev       # the twelve browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 6,451 unit tests, no GPU needed
+npm test          # 6,596 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
 npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```
