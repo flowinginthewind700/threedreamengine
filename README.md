@@ -300,7 +300,7 @@ speed, the red cube in the jaw on its way to the basket.*
 | 8,192 envs, one CUDA step on an RTX 5090 | 0.560 ms of launches against 0.557 ms at 256 envs: the step does not get more expensive as the batch grows, so 8,192 rows come in at 14.6M env-steps/s, and the policy's sampler is bitwise identical to the host at every rung |
 | That device tier against the CPU reference | 4.19M row-steps at 8,192 envs, 600 of them outside 1e-4 in excursions of at most 131 steps, no episode mismatch: inside the boundary an f32 tier declares against an f64 reference |
 | Rust kernel against the TS reference | bit-identical digest, 2.6-4.9x faster in Node |
-| Tests | 6,596 unit tests in 207 files, 87 browser tests, 68 Rust tests |
+| Tests | 6,604 unit tests in 207 files, 87 browser tests, 68 Rust tests |
 | Texture residency of a read-in UE level, 512 MiB budget | 2303.33 to 512.00 MiB across 380 maps: the budget filled to within 4.5 KiB, resolution spent instead of art, 2 maps pinned at 10.00 MiB |
 | A task document to a trained policy | 320 headless episodes, 38,168 control steps, then the release ruler — 2,000 greedy episodes over a composition the run never trained in: 0% to 21% success, mean gap to the basket 0.299 m to 0.125 m. 26.4 min for that command, and the ruler by itself is 18.7 min on this world |
 | That policy trained on the card, and served | 8,192 envs x 512 steps x 49 segments, 3.6 h on one RTX 5090 for 25,088 policy steps; the trunk scores 91.75% over 2,000 greedy episodes at seed 22, and the release measures the policy it would replace on that same ruler |
@@ -314,7 +314,7 @@ speed, the red cube in the jaw on its way to the basket.*
 | 8192 个环境，RTX 5090 上一次 CUDA step | 0.560 ms 的 launch，而 256 个环境时是 0.557 ms：这一步不随批量变大而变贵，于是 8192 行的吞吐是 14.6M env-steps/s，策略采样器在每一档都与宿主逐位一致 |
 | 这一设备档对着 CPU 参照 | 8192 个环境下 419 万个 row-step，其中 600 个在 1e-4 之外、excursion 最长 131 步，episode 计数零不一致：落在一档 f32 实现对着 f64 参照所声明的那个边界之内 |
 | Rust 内核对 TS 参考实现 | 摘要逐位一致，Node 下快 2.6–4.9 倍 |
-| 测试 | 207 个文件 6,596 个单元测试、87 个浏览器测试、68 个 Rust 测试 |
+| 测试 | 207 个文件 6,604 个单元测试、87 个浏览器测试、68 个 Rust 测试 |
 | 一张读进来的 UE 关卡的纹理驻留，512 MiB 预算 | 380 张图 2303.33 到 512.00 MiB：预算花到只差 4.5 KiB，花掉的是分辨率而不是画面，钉住的 2 张 10.00 MiB |
 | 一份任务文档到一个训练好的策略 | 无头 320 局、38168 个 control step，然后是发布那把尺 —— 2000 局 greedy，跑在一个训练从未碰过的组合上：成功率 0% 到 21%，到篮子口的平均距离 0.299 m 到 0.125 m。那条命令 26.4 分钟，而这把尺单独在这个世界上跑一次是 18.7 分钟 |
 | 那枚策略，在卡上训练、线上在服务 | 8192 个环境 × 512 步 × 49 段，一张 RTX 5090 上 3.6 h、25088 个策略步；那枚 trunk 在 seed 22 上 2000 局 greedy 读出 91.75%，而发布对它要替换掉的那枚用的是同一把尺 |
@@ -326,7 +326,7 @@ speed, the red cube in the jaw on its way to the basket.*
 npm install
 npm run dev       # the twelve browser demos on http://localhost:5173
 npm run train     # headless training in Node, prints a progress trace
-npm test          # 6,596 unit tests, no GPU needed
+npm test          # 6,604 unit tests, no GPU needed
 npm run gate      # every gate, in order, stopping at the first red one
 npm run gate:fast # the same, minus the wasm rebuild and the coverage pass
 ```
